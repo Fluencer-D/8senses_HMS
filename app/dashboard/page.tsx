@@ -1749,7 +1749,7 @@ const DoctorScheduleTable: React.FC = () => {
 
     // Remove "Dr." for selected Special Education doctors
     const removeDrFor = []
-    // "Kalyani Vijay Shewale", "Amrita Shekhar Bam", "Divya Yashwant Bagul", "Gayati "
+    // 
 
     // First clean up names (remove Dr. where required)
     const cleanedDoctors = doctors.map(doc => {
