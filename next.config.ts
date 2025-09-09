@@ -5,8 +5,7 @@ const nextConfig = {
   assetPrefix: '/hms',
   trailingSlash: true,
   experimental: {
-    serverActions: true,
-    outputFileTracingRoot: undefined,
+    serverActions: {},  // ✅ Correct!
   },
   eslint: {
     ignoreDuringBuilds: true,
