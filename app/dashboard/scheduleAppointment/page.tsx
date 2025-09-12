@@ -55,6 +55,8 @@ interface Patient {
   parentInfo?: {
     name?: string
     phone?: string
+    motherName?: string
+    motherPhone?: string
     email?: string
     relationship: string
     address?: string
@@ -1668,13 +1670,14 @@ const AppointmentSchedulingContent = () => {
                             const parentName = patient?.parentName || patient?.parentInfo?.name || ""
                             const email = patient?.email || patient?.parentInfo?.email || ""
                             const phone = patient?.contactNumber || patient?.parentInfo?.phone || ""
+                            const motherPhone = patient?.parentInfo?.motherPhone || ""
                             const address = patient?.address || patient?.parentInfo?.address || ""
                             setFormData({
                               ...formData,
                               patientName: childName,
                               fatherName: parentName,
                               email: email,
-                              phone: phone,
+                              phone: motherPhone,
                               address: address,
                             })
                             setShowPatientSearch(false)
