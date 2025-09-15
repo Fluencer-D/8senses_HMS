@@ -2,7 +2,7 @@
 const nextConfig = {
   output: "standalone",
   basePath: "/hms",
-  assetPrefix: "/hms",
+  // assetPrefix: "/hms",
   trailingSlash: true,
   eslint: {
     ignoreDuringBuilds: true,
