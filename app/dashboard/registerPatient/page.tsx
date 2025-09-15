@@ -952,7 +952,7 @@ const PatientRegistrationForm = () => {
                     name="parentInfo.phone"
                     value={formData.parentInfo.phone}
                     onChange={handleInputChange}
-                    placeholder="Enter father's contact number here (10-digits number)"
+                    placeholder="Enter father's contact number here"
                     required
                     className="w-full px-3 py-3 border border-gray-300 rounded-lg text-black focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-pink-500"
                   />
@@ -988,7 +988,7 @@ const PatientRegistrationForm = () => {
                     name="parentInfo.motherPhone"
                     value={formData.parentInfo.motherPhone}
                     onChange={handleInputChange}
-                    placeholder="Enter mother's contact number here (10-digits number)"
+                    placeholder="Enter mother's contact number here"
                     required
                     className="w-full px-3 py-3 border border-gray-300 rounded-lg text-black focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-pink-500"
                   />
