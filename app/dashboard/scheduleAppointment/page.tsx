@@ -706,7 +706,7 @@ const AppointmentSchedulingContent = () => {
       if (!formData.phone) errors.phone = true
       if (!formData.email) errors.email = true
     }
-    if (Object.keys(errors).length > 0) {
+  if (Object.keys(errors).length > 0) {
       setFieldErrors(errors)
       setShowValidation(true)
       toast.error("Please fill in all required fields")

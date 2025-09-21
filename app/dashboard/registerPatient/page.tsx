@@ -1,31 +1,41 @@
-"use client"
+"use client";
 
-import type React from "react"
-import { useState, useRef, createContext, useCallback } from "react"
-import { ChevronLeft, Upload, Calendar, X, CheckCircle, Loader2, Search, ChevronDown } from "lucide-react"
-import { useRouter } from "next/navigation"
+import type React from "react";
+import { useState, useRef, createContext, useCallback } from "react";
+import {
+  ChevronLeft,
+  Upload,
+  Calendar,
+  X,
+  CheckCircle,
+  Loader2,
+  Search,
+  ChevronDown,
+} from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 
 // Toast functionality
 interface Toast {
-  id: string
-  title?: string
-  description?: string
-  type: "success" | "error" | "warning" | "info"
-  duration?: number
+  id: string;
+  title?: string;
+  description?: string;
+  type: "success" | "error" | "warning" | "info";
+  duration?: number;
 }
 
 const ToastContext = createContext<{
-  toasts: Toast[]
-  addToast: (toast: Omit<Toast, "id">) => void
-  removeToast: (id: string) => void
+  toasts: Toast[];
+  addToast: (toast: Omit<Toast, "id">) => void;
+  removeToast: (id: string) => void;
 }>({
   toasts: [],
   addToast: () => {},
   removeToast: () => {},
-})
+});
 
 function cn(...classes: (string | undefined)[]) {
-  return classes.filter(Boolean).join(" ")
+  return classes.filter(Boolean).join(" ");
 }
 
 // Child Symptoms Data
@@ -57,37 +67,44 @@ const CHILD_SYMPTOMS = [
   "Developmental disorders",
   "Genetic disorders",
   "Others",
-]
+];
 
 // Multi-Select Symptoms Component
 const SymptomsMultiSelect: React.FC<{
-  selectedSymptoms: string[]
-  onSymptomsChange: (symptoms: string[]) => void
+  selectedSymptoms: string[];
+  onSymptomsChange: (symptoms: string[]) => void;
 }> = ({ selectedSymptoms, onSymptomsChange }) => {
-  const [isOpen, setIsOpen] = useState(false)
-  const [searchTerm, setSearchTerm] = useState("")
-  const dropdownRef = useRef<HTMLDivElement>(null)
+  const [isOpen, setIsOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   const filteredSymptoms = CHILD_SYMPTOMS.filter(
-    (symptom) => symptom.toLowerCase().includes(searchTerm.toLowerCase()) && !selectedSymptoms.includes(symptom),
-  )
+    (symptom) =>
+      symptom.toLowerCase().includes(searchTerm.toLowerCase()) &&
+      !selectedSymptoms.includes(symptom)
+  );
 
   const handleSymptomSelect = (symptom: string) => {
     if (!selectedSymptoms.includes(symptom)) {
-      onSymptomsChange([...selectedSymptoms, symptom])
+      onSymptomsChange([...selectedSymptoms, symptom]);
     }
-    setSearchTerm("")
-  }
+    setSearchTerm("");
+  };
 
   const handleSymptomRemove = (symptomToRemove: string) => {
-    onSymptomsChange(selectedSymptoms.filter((symptom) => symptom !== symptomToRemove))
-  }
+    onSymptomsChange(
+      selectedSymptoms.filter((symptom) => symptom !== symptomToRemove)
+    );
+  };
 
   const handleClickOutside = (e: React.MouseEvent) => {
-    if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
-      setIsOpen(false)
+    if (
+      dropdownRef.current &&
+      !dropdownRef.current.contains(e.target as Node)
+    ) {
+      setIsOpen(false);
     }
-  }
+  };
 
   return (
     <div className="relative" ref={dropdownRef}>
@@ -118,12 +135,22 @@ const SymptomsMultiSelect: React.FC<{
         onClick={() => setIsOpen(!isOpen)}
       >
         <div className="flex items-center justify-between">
-          <span className={selectedSymptoms.length > 0 ? "text-gray-900" : "text-gray-500"}>
+          <span
+            className={
+              selectedSymptoms.length > 0 ? "text-gray-900" : "text-gray-500"
+            }
+          >
             {selectedSymptoms.length > 0
-              ? `${selectedSymptoms.length} symptom${selectedSymptoms.length > 1 ? "s" : ""} selected`
+              ? `${selectedSymptoms.length} symptom${
+                  selectedSymptoms.length > 1 ? "s" : ""
+                } selected`
               : "Select child symptoms"}
           </span>
-          <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${isOpen ? "rotate-180" : ""}`} />
+          <ChevronDown
+            className={`w-4 h-4 text-gray-400 transition-transform ${
+              isOpen ? "rotate-180" : ""
+            }`}
+          />
         </div>
       </div>
 
@@ -167,19 +194,21 @@ const SymptomsMultiSelect: React.FC<{
       )}
 
       {/* Overlay to close dropdown */}
-      {isOpen && <div className="fixed inset-0 z-5" onClick={() => setIsOpen(false)} />}
+      {isOpen && (
+        <div className="fixed inset-0 z-5" onClick={() => setIsOpen(false)} />
+      )}
     </div>
-  )
-}
+  );
+};
 
 // Success Modal Component
 const SuccessModal: React.FC<{
-  isOpen: boolean
-  onClose: () => void
-  patientName: string
-  isRegisterLater: boolean
+  isOpen: boolean;
+  onClose: () => void;
+  patientName: string;
+  isRegisterLater: boolean;
 }> = ({ isOpen, onClose, patientName, isRegisterLater }) => {
-  if (!isOpen) return null
+  if (!isOpen) return null;
 
   return (
     <div className="fixed font-sans inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
@@ -207,7 +236,9 @@ const SuccessModal: React.FC<{
             </div>
             <div className="flex items-center justify-between text-sm mt-2">
               <span className="text-gray-600">Registration Date:</span>
-              <span className="font-medium text-gray-900">{new Date().toLocaleDateString()}</span>
+              <span className="font-medium text-gray-900">
+                {new Date().toLocaleDateString()}
+              </span>
             </div>
             <div className="flex items-center justify-between text-sm mt-2">
               <span className="text-gray-600">Status:</span>
@@ -230,40 +261,40 @@ const SuccessModal: React.FC<{
         </div>
       </div>
     </div>
-  )
-}
+  );
+};
 
 // Main component
 const PatientRegistrationForm = () => {
-  const router = useRouter()
-  const [loading, setLoading] = useState(false)
+  const router = useRouter();
+  const [loading, setLoading] = useState(false);
 
   // Upload loading states
-  const [uploadingPhoto, setUploadingPhoto] = useState(false)
-  const [uploadingBirthCert, setUploadingBirthCert] = useState(false)
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [uploadingBirthCert, setUploadingBirthCert] = useState(false);
 
   // Success Modal State
-  const [showSuccessModal, setShowSuccessModal] = useState(false)
-  const [isRegisterLater, setIsRegisterLater] = useState(false)
-  const [registeredPatientName, setRegisteredPatientName] = useState("")
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [isRegisterLater, setIsRegisterLater] = useState(false);
+  const [registeredPatientName, setRegisteredPatientName] = useState("");
 
   // Toast state
-  const [toasts, setToasts] = useState<Toast[]>([])
+  const [toasts, setToasts] = useState<Toast[]>([]);
 
   const addToast = useCallback((toast: Omit<Toast, "id">) => {
-    const id = Math.random().toString(36).substr(2, 9)
-    const newToast = { ...toast, id }
-    setToasts((prev) => [...prev, newToast])
+    const id = Math.random().toString(36).substr(2, 9);
+    const newToast = { ...toast, id };
+    setToasts((prev) => [...prev, newToast]);
 
     // Auto remove after duration
     setTimeout(() => {
-      setToasts((prev) => prev.filter((t) => t.id !== id))
-    }, toast.duration || 5000)
-  }, [])
+      setToasts((prev) => prev.filter((t) => t.id !== id));
+    }, toast.duration || 5000);
+  }, []);
 
   const removeToast = useCallback((id: string) => {
-    setToasts((prev) => prev.filter((t) => t.id !== id))
-  }, [])
+    setToasts((prev) => prev.filter((t) => t.id !== id));
+  }, []);
 
   // Refs for form fields to focus on validation errors
   const fieldRefs = {
@@ -276,15 +307,31 @@ const PatientRegistrationForm = () => {
     motherName: useRef<HTMLInputElement>(null),
     motherPhone: useRef<HTMLInputElement>(null),
     address: useRef<HTMLTextAreaElement>(null),
-  }
+    whatsappContact: useRef<HTMLInputElement>(null),
+  };
+
+  // Ensure "mother" radio is default on mount
+  // (If you want to force it even if user changes, use useEffect below)
+  useEffect(() => {
+    setFormData((prev) => ({
+      ...prev,
+      whatsappContactType: "mother",
+      whatsappContact: prev.parentInfo.motherPhone || "",
+    }));
+  }, []);
 
   // File previews and URLs
-  const [childPhotoPreview, setChildPhotoPreview] = useState<string | null>(null)
-  const [childPhotoUrl, setChildPhotoUrl] = useState<string>("")
-  const [childPhotoPublicId, setChildPhotoPublicId] = useState<string>("")
-  const [birthCertificatePreview, setBirthCertificatePreview] = useState<string | null>(null)
-  const [birthCertificateUrl, setBirthCertificateUrl] = useState<string>("")
-  const [birthCertificatePublicId, setBirthCertificatePublicId] = useState<string>("")
+  const [childPhotoPreview, setChildPhotoPreview] = useState<string | null>(
+    null
+  );
+  const [childPhotoUrl, setChildPhotoUrl] = useState<string>("");
+  const [childPhotoPublicId, setChildPhotoPublicId] = useState<string>("");
+  const [birthCertificatePreview, setBirthCertificatePreview] = useState<
+    string | null
+  >(null);
+  const [birthCertificateUrl, setBirthCertificateUrl] = useState<string>("");
+  const [birthCertificatePublicId, setBirthCertificatePublicId] =
+    useState<string>("");
 
   const [formData, setFormData] = useState({
     // Child's Information
@@ -297,6 +344,9 @@ const PatientRegistrationForm = () => {
     // Child Symptoms and Notes - NEW FIELDS
     childSymptoms: [] as string[],
     notes: "",
+    // WhatsApp Contact - Store actual phone number
+    whatsappContact: "", // Will be set to motherPhone by default when motherPhone is entered
+    whatsappContactType: "mother", // Track which type is selected (father/mother)
     // Parent's Information
     parentInfo: {
       name: "",
@@ -315,13 +365,39 @@ const PatientRegistrationForm = () => {
       relation: "",
       phone: "",
     },
-  })
+  });
+  // Add this useEffect after the existing one to sync WhatsApp contact when phone numbers change
+  useEffect(() => {
+    // Update whatsappContact when the selected contact type's number changes
+    if (
+      formData.whatsappContactType === "mother" &&
+      formData.parentInfo.motherPhone
+    ) {
+      setFormData((prev) => ({
+        ...prev,
+        whatsappContact: prev.parentInfo.motherPhone,
+      }));
+    } else if (
+      formData.whatsappContactType === "father" &&
+      formData.parentInfo.phone
+    ) {
+      setFormData((prev) => ({
+        ...prev,
+        whatsappContact: prev.parentInfo.phone,
+      }));
+    }
+  }, [
+    formData.parentInfo.motherPhone,
+    formData.parentInfo.phone,
+    formData.whatsappContactType,
+  ]);
+  // console.log("Form Data:", formData)
 
   // Cloudinary upload function
   const uploadToCloudinary = async (file: File, folder = "patients") => {
-    const formData = new FormData()
-    formData.append("file", file)
-    formData.append("upload_preset", "my_unsigned_preset") // Replace with your unsigned preset name
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("upload_preset", "my_unsigned_preset"); // Replace with your unsigned preset name
 
     try {
       const response = await fetch(
@@ -329,87 +405,126 @@ const PatientRegistrationForm = () => {
         {
           method: "POST",
           body: formData,
-        },
-      )
+        }
+      );
 
       if (!response.ok) {
-        throw new Error("Failed to upload image")
+        throw new Error("Failed to upload image");
       }
 
-      const data = await response.json()
+      const data = await response.json();
       return {
         url: data.secure_url,
         public_id: data.public_id,
-      }
+      };
     } catch (error) {
-      console.error("Cloudinary upload error:", error)
-      throw error
+      console.error("Cloudinary upload error:", error);
+      throw error;
     }
-  }
+  };
 
   // Calculate age when date of birth changes
   const calculateAge = (dateOfBirth: string) => {
-    if (!dateOfBirth) return ""
-    const today = new Date()
-    const birthDate = new Date(dateOfBirth)
-    let age = today.getFullYear() - birthDate.getFullYear()
-    const monthDiff = today.getMonth() - birthDate.getMonth()
-    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
-      age--
+    if (!dateOfBirth) return "";
+    const today = new Date();
+    const birthDate = new Date(dateOfBirth);
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const monthDiff = today.getMonth() - birthDate.getMonth();
+    if (
+      monthDiff < 0 ||
+      (monthDiff === 0 && today.getDate() < birthDate.getDate())
+    ) {
+      age--;
     }
-    return age.toString()
-  }
+    return age.toString();
+  };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target
+  // Also update the handleInputChange function for phone number fields
+  const handleInputChange = (
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
+    >
+  ) => {
+    const { name, value } = e.target;
 
     if (name.startsWith("parentInfo.")) {
-      const field = name.split(".")[1]
-      setFormData({
-        ...formData,
-        parentInfo: {
-          ...formData.parentInfo,
-          [field]: value,
-        },
-      })
+      const field = name.split(".")[1];
+
+      setFormData((prev) => {
+        const updated = {
+          ...prev,
+          parentInfo: {
+            ...prev.parentInfo,
+            [field]: value,
+          },
+        };
+
+        // Auto-update WhatsApp contact when phone numbers change
+        if (field === "phone" && prev.whatsappContactType === "father") {
+          updated.whatsappContact = value;
+        } else if (
+          field === "motherPhone" &&
+          prev.whatsappContactType === "mother"
+        ) {
+          updated.whatsappContact = value;
+        }
+
+        return updated;
+      });
     } else if (name.startsWith("emergencyContact.")) {
-      const field = name.split(".")[1]
+      const field = name.split(".")[1];
       setFormData({
         ...formData,
         emergencyContact: {
           ...formData.emergencyContact,
           [field]: value,
         },
-      })
+      });
+    } else if (name === "whatsappContactType") {
+      // When changing WhatsApp contact type, set the number accordingly
+      let whatsappNumber = "";
+      if (value === "father") {
+        whatsappNumber = formData.parentInfo.phone || "";
+      } else {
+        whatsappNumber = formData.parentInfo.motherPhone || "";
+      }
+      setFormData({
+        ...formData,
+        whatsappContactType: value,
+        whatsappContact: whatsappNumber,
+      });
     } else {
       setFormData({
         ...formData,
         [name]: value,
-      })
+      });
 
       // Auto-calculate age when date of birth changes
       if (name === "dateOfBirth") {
-        const calculatedAge = calculateAge(value)
+        const calculatedAge = calculateAge(value);
         setFormData((prev) => ({
           ...prev,
           dateOfBirth: value,
           age: calculatedAge,
-        }))
+        }));
       }
     }
-  }
+  };
 
   // Handle symptoms change
   const handleSymptomsChange = (symptoms: string[]) => {
     setFormData({
       ...formData,
       childSymptoms: symptoms,
-    })
-  }
+    });
+  };
 
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, fileType: string) => {
-    const file = e.target.files?.[0]
-    if (!file) return
+  const handleFileUpload = async (
+    e: React.ChangeEvent<HTMLInputElement>,
+    fileType: string
+  ) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
 
     // Validate file size (max 5MB)
     if (file.size > 5 * 1024 * 1024) {
@@ -418,102 +533,198 @@ const PatientRegistrationForm = () => {
         title: "File Too Large",
         description: "Please select a file smaller than 5MB.",
         duration: 4000,
-      })
-      return
+      });
+      return;
     }
 
     // Validate file type
-    const allowedTypes = ["image/jpeg", "image/jpg", "image/png", "image/webp"]
+    const allowedTypes = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
 
     if (!allowedTypes.includes(file.type)) {
       addToast({
         type: "error",
         title: "Invalid File Type",
-        description: `Please select a valid ${fileType === "birthCertificate" ? "image or PDF" : "image"} file.`,
+        description: `Please select a valid ${
+          fileType === "birthCertificate" ? "image or PDF" : "image"
+        } file.`,
         duration: 4000,
-      })
-      return
+      });
+      return;
     }
 
     try {
       // Set loading state
       if (fileType === "childPhoto") {
-        setUploadingPhoto(true)
+        setUploadingPhoto(true);
       } else if (fileType === "birthCertificate") {
-        setUploadingBirthCert(true)
+        setUploadingBirthCert(true);
       }
 
       // Create preview for images
       if (file.type.startsWith("image/")) {
-        const reader = new FileReader()
+        const reader = new FileReader();
         reader.onloadend = () => {
-          const result = reader.result as string
+          const result = reader.result as string;
           if (fileType === "childPhoto") {
-            setChildPhotoPreview(result)
+            setChildPhotoPreview(result);
           } else if (fileType === "birthCertificate") {
-            setBirthCertificatePreview(result)
+            setBirthCertificatePreview(result);
           }
-        }
-        reader.readAsDataURL(file)
+        };
+        reader.readAsDataURL(file);
       }
 
       // Upload to Cloudinary
       const uploadResult = await uploadToCloudinary(
         file,
-        fileType === "childPhoto" ? "patients/photos" : "patients/certificates",
-      )
+        fileType === "childPhoto" ? "patients/photos" : "patients/certificates"
+      );
 
       // Store the URLs and public IDs
       if (fileType === "childPhoto") {
-        setChildPhotoUrl(uploadResult.url)
-        setChildPhotoPublicId(uploadResult.public_id)
+        setChildPhotoUrl(uploadResult.url);
+        setChildPhotoPublicId(uploadResult.public_id);
         addToast({
           type: "success",
           title: "Photo Uploaded",
           description: "Child photo uploaded successfully!",
           duration: 3000,
-        })
+        });
       } else if (fileType === "birthCertificate") {
-        setBirthCertificateUrl(uploadResult.url)
-        setBirthCertificatePublicId(uploadResult.public_id)
+        setBirthCertificateUrl(uploadResult.url);
+        setBirthCertificatePublicId(uploadResult.public_id);
         addToast({
           type: "success",
           title: "Certificate Uploaded",
           description: "Birth certificate uploaded successfully!",
           duration: 3000,
-        })
+        });
       }
     } catch (error) {
-      console.error("Upload error:", error)
+      console.error("Upload error:", error);
       addToast({
         type: "error",
         title: "Upload Failed",
-        description: `Failed to upload ${fileType === "childPhoto" ? "photo" : "birth certificate"}. Please try again.`,
+        description: `Failed to upload ${
+          fileType === "childPhoto" ? "photo" : "birth certificate"
+        }. Please try again.`,
         duration: 5000,
-      })
+      });
     } finally {
       // Reset loading state
       if (fileType === "childPhoto") {
-        setUploadingPhoto(false)
+        setUploadingPhoto(false);
       } else if (fileType === "birthCertificate") {
-        setUploadingBirthCert(false)
+        setUploadingBirthCert(false);
       }
     }
-  }
+  };
 
   // Validation function
   const validateForm = () => {
     const requiredFields = [
-      { value: formData.childName, ref: fieldRefs.childName, name: "Child's First Name" },
-      { value: formData.lastName, ref: fieldRefs.lastName, name: "Child's Last Name" },
-      { value: formData.dateOfBirth, ref: fieldRefs.dateOfBirth, name: "Date of Birth" },
+      {
+        value: formData.childName,
+        ref: fieldRefs.childName,
+        name: "Child's First Name",
+      },
+      {
+        value: formData.lastName,
+        ref: fieldRefs.lastName,
+        name: "Child's Last Name",
+      },
+      {
+        value: formData.dateOfBirth,
+        ref: fieldRefs.dateOfBirth,
+        name: "Date of Birth",
+      },
       { value: formData.gender, ref: fieldRefs.gender, name: "Gender" },
-      { value: formData.parentInfo.name, ref: fieldRefs.parentName, name: "Father's Name" },
-      { value: formData.parentInfo.phone, ref: fieldRefs.parentPhone, name: "Father's Contact Number" },
-      { value: formData.parentInfo.motherName, ref: fieldRefs.motherName, name: "Mother's Name" },
-      { value: formData.parentInfo.motherPhone, ref: fieldRefs.motherPhone, name: "Mother's Contact Number" },
-      { value: formData.parentInfo.address, ref: fieldRefs.address, name: "Address" },
-    ]
+      {
+        value: formData.parentInfo.name,
+        ref: fieldRefs.parentName,
+        name: "Father's Name",
+      },
+      {
+        value: formData.parentInfo.phone,
+        ref: fieldRefs.parentPhone,
+        name: "Father's Contact Number",
+      },
+      {
+        value: formData.parentInfo.motherName,
+        ref: fieldRefs.motherName,
+        name: "Mother's Name",
+      },
+      {
+        value: formData.parentInfo.motherPhone,
+        ref: fieldRefs.motherPhone,
+        name: "Mother's Contact Number",
+      },
+      {
+        value: formData.parentInfo.address,
+        ref: fieldRefs.address,
+        name: "Address",
+      },
+      {
+        value: formData.whatsappContact,
+        ref: fieldRefs.whatsappContact,
+        name: "WhatsApp Contact",
+      },
+    ];
+    // If whatsappContact is empty, fill it with the selected contact type's number
+    if (!formData.whatsappContact.trim()) {
+      let fallbackNumber = "";
+      if (formData.whatsappContactType === "father") {
+        fallbackNumber = formData.parentInfo.phone || "";
+      } else {
+        fallbackNumber = formData.parentInfo.motherPhone || "";
+      }
+      if (fallbackNumber) {
+        setFormData((prev) => ({
+          ...prev,
+          whatsappContact: fallbackNumber,
+        }));
+      }
+    }
+
+    console.log("Validating WhatsApp Contact:", formData);
+    // Phone number validation (10 digits, only numbers)
+    const phoneRegex = /^\d{10}$/;
+    const phoneFields = [
+      {
+        value: formData.parentInfo.phone,
+        ref: fieldRefs.parentPhone,
+        name: "Father's Contact Number",
+      },
+      {
+        value: formData.parentInfo.motherPhone,
+        ref: fieldRefs.motherPhone,
+        name: "Mother's Contact Number",
+      },
+      {
+        value: formData.whatsappContact,
+        ref: fieldRefs.whatsappContact,
+        name: "WhatsApp Contact",
+      },
+    ];
+
+    for (const field of phoneFields) {
+      if (!phoneRegex.test(field.value)) {
+        addToast({
+          type: "error",
+          title: "Invalid Phone Number",
+          description: `Please enter a valid 10-digit number for ${field.name}.`,
+          duration: 4000,
+        });
+        if (field.ref.current) {
+          field.ref.current.focus();
+          field.ref.current.scrollIntoView({
+            behavior: "smooth",
+            block: "center",
+          });
+        }
+        return false;
+      }
+    }
 
     for (const field of requiredFields) {
       if (!field.value.trim()) {
@@ -522,99 +733,111 @@ const PatientRegistrationForm = () => {
           title: "Required Field Missing",
           description: `Please fill in the ${field.name} field.`,
           duration: 4000,
-        })
+        });
         // Focus on the first invalid field
         if (field.ref.current) {
-          field.ref.current.focus()
-          field.ref.current.scrollIntoView({ behavior: "smooth", block: "center" })
+          field.ref.current.focus();
+          field.ref.current.scrollIntoView({
+            behavior: "smooth",
+            block: "center",
+          });
         }
-        return false
+        return false;
       }
     }
 
-    return true
-  }
+    return true;
+  };
 
   const submitRegistration = async (isLater: boolean) => {
     if (!validateForm()) {
-      return
+      return;
     }
 
-    setLoading(true)
-    setIsRegisterLater(isLater)
+    setLoading(true);
+    setIsRegisterLater(isLater);
 
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/patients/register`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("receptionToken")}`,
-        },
-        body: JSON.stringify({
-          firstName: formData.childName,
-          lastName: formData.lastName,
-          dateOfBirth: formData.dateOfBirth,
-          gender: formData.gender,
-          // NEW FIELDS - Child Symptoms and Notes
-          childSymptoms: formData.childSymptoms,
-          notes: formData.notes,
-          // Send photo data with URL and public_id
-          photo: childPhotoUrl
-            ? {
-                url: childPhotoUrl,
-                public_id: childPhotoPublicId,
-              }
-            : undefined,
-          // Send birth certificate data with URL and public_id
-          birthCertificate: birthCertificateUrl
-            ? {
-                url: birthCertificateUrl,
-                public_id: birthCertificatePublicId,
-              }
-            : undefined,
-          parentInfo: {
-            name: formData.parentInfo.name,
-            phone: formData.parentInfo.phone,
-            email: formData.parentInfo.email,
-            relationship: formData.parentInfo.relationship,
-            address: formData.parentInfo.address,
-            motherName: formData.parentInfo.motherName,
-            motherphone: formData.parentInfo.motherPhone,
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/patients/register`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("receptionToken")}`,
           },
-          emergencyContact: {
-            name: formData.emergencyContact.name,
-            relation: formData.emergencyContact.relation,
-            phone: formData.emergencyContact.phone,
-          },
-        }),
-      })
+          body: JSON.stringify({
+            firstName: formData.childName,
+            lastName: formData.lastName,
+            dateOfBirth: formData.dateOfBirth,
+            gender: formData.gender,
+            // NEW FIELDS - Child Symptoms and Notes
+            childSymptoms: formData.childSymptoms,
+            notes: formData.notes,
+            // WhatsApp Contact Information - NEW
+            whatsappContact: formData.whatsappContact,
+            whatsappContactType: formData.whatsappContactType,
+            // Send photo data with URL and public_id
+            photo: childPhotoUrl
+              ? {
+                  url: childPhotoUrl,
+                  public_id: childPhotoPublicId,
+                }
+              : undefined,
+            // Send birth certificate data with URL and public_id
+            birthCertificate: birthCertificateUrl
+              ? {
+                  url: birthCertificateUrl,
+                  public_id: birthCertificatePublicId,
+                }
+              : undefined,
+            parentInfo: {
+              name: formData.parentInfo.name,
+              phone: formData.parentInfo.phone,
+              email: formData.parentInfo.email,
+              relationship: formData.parentInfo.relationship,
+              address: formData.parentInfo.address,
+              motherName: formData.parentInfo.motherName,
+              motherPhone: formData.parentInfo.motherPhone, // Fixed typo: was "motherphone"
+            },
+            emergencyContact: {
+              name: formData.emergencyContact.name,
+              relation: formData.emergencyContact.relation,
+              phone: formData.emergencyContact.phone,
+            },
+          }),
+        }
+      );
 
       if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.message || "Failed to register patient")
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Failed to register patient");
       }
 
-      const result = await response.json()
-      console.log("Registered successfully", result)
+      const result = await response.json();
+      console.log("Registered successfully", result);
 
       // Set patient name and show success modal
-      setRegisteredPatientName(`${formData.childName} ${formData.lastName}`)
-      setShowSuccessModal(true)
+      setRegisteredPatientName(`${formData.childName} ${formData.lastName}`);
+      setShowSuccessModal(true);
     } catch (error) {
-      console.error("Registration error:", error)
+      console.error("Registration error:", error);
       addToast({
         type: "error",
         title: "Registration Failed",
-        description: error instanceof Error ? error.message : "Failed to register patient. Please try again.",
+        description:
+          error instanceof Error
+            ? error.message
+            : "Failed to register patient. Please try again.",
         duration: 5000,
-      })
+      });
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const handleSuccessModalClose = () => {
-    setShowSuccessModal(false)
+    setShowSuccessModal(false);
     if (isRegisterLater) {
       // Stay on the same page and reset form
       setFormData({
@@ -626,6 +849,8 @@ const PatientRegistrationForm = () => {
         parentId: "",
         childSymptoms: [],
         notes: "",
+        whatsappContact: "",
+        whatsappContactType: "mother",
         parentInfo: {
           name: "",
           phone: "",
@@ -642,29 +867,31 @@ const PatientRegistrationForm = () => {
           relation: "",
           phone: "",
         },
-      })
+      });
       // Reset file previews and URLs
-      setChildPhotoPreview(null)
-      setChildPhotoUrl("")
-      setChildPhotoPublicId("")
-      setBirthCertificatePreview(null)
-      setBirthCertificateUrl("")
-      setBirthCertificatePublicId("")
+      setChildPhotoPreview(null);
+      setChildPhotoUrl("");
+      setChildPhotoPublicId("");
+      setBirthCertificatePreview(null);
+      setBirthCertificateUrl("");
+      setBirthCertificatePublicId("");
     } else {
       // Redirect to schedule appointment
-      router.push("/dashboard/scheduleAppointment")
+      router.push("/dashboard/scheduleAppointment");
     }
-  }
+  };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
-    await submitRegistration(false)
-  }
+    e.preventDefault();
+    await submitRegistration(false);
+  };
 
-  const handleRegisterLater = async (e: React.MouseEvent<HTMLButtonElement>) => {
-    e.preventDefault()
-    await submitRegistration(true)
-  }
+  const handleRegisterLater = async (
+    e: React.MouseEvent<HTMLButtonElement>
+  ) => {
+    e.preventDefault();
+    await submitRegistration(true);
+  };
 
   return (
     <ToastContext.Provider value={{ toasts, addToast, removeToast }}>
@@ -676,19 +903,29 @@ const PatientRegistrationForm = () => {
               key={toast.id}
               className={cn(
                 "flex items-center gap-3 p-4 rounded-lg shadow-lg border max-w-sm transition-all duration-300 transform translate-x-0",
-                {
-                  "bg-green-50 border-green-200 text-green-800": toast.type === "success",
-                  "bg-red-50 border-red-200 text-red-800": toast.type === "error",
-                  "bg-yellow-50 border-yellow-200 text-yellow-800": toast.type === "warning",
-                  "bg-blue-50 border-blue-200 text-blue-800": toast.type === "info",
-                }[toast.type] || "bg-gray-50 border-gray-200 text-gray-800",
+                toast.type === "success"
+                  ? "bg-green-50 border-green-200 text-green-800"
+                  : toast.type === "error"
+                  ? "bg-red-50 border-red-200 text-red-800"
+                  : toast.type === "warning"
+                  ? "bg-yellow-50 border-yellow-200 text-yellow-800"
+                  : toast.type === "info"
+                  ? "bg-blue-50 border-blue-200 text-blue-800"
+                  : "bg-gray-50 border-gray-200 text-gray-800"
               )}
             >
               <div className="flex-1">
-                {toast.title && <div className="font-medium text-sm">{toast.title}</div>}
-                {toast.description && <div className="text-sm opacity-90">{toast.description}</div>}
+                {toast.title && (
+                  <div className="font-medium text-sm">{toast.title}</div>
+                )}
+                {toast.description && (
+                  <div className="text-sm opacity-90">{toast.description}</div>
+                )}
               </div>
-              <button onClick={() => removeToast(toast.id)} className="text-current opacity-50 hover:opacity-100">
+              <button
+                onClick={() => removeToast(toast.id)}
+                className="text-current opacity-50 hover:opacity-100"
+              >
                 <X className="w-4 h-4" />
               </button>
             </div>
@@ -705,12 +942,17 @@ const PatientRegistrationForm = () => {
 
         {/* Header */}
         <div className="mb-6 pt-24 w-[95%]">
-          <div className="flex items-center text-blue-600 mb-3 cursor-pointer" onClick={() => router.back()}>
+          <div
+            className="flex items-center text-blue-600 mb-3 cursor-pointer"
+            onClick={() => router.back()}
+          >
             <ChevronLeft className="w-4 h-4 mr-1" />
             <span className="text-sm font-medium">Back</span>
           </div>
           <div className="flex items-center justify-between mb-2">
-            <h1 className="text-2xl font-bold text-gray-900">Register New Patient</h1>
+            <h1 className="text-2xl font-bold text-gray-900">
+              Register New Patient
+            </h1>
             <div className="flex gap-3">
               <button
                 onClick={handleRegisterLater}
@@ -727,7 +969,9 @@ const PatientRegistrationForm = () => {
                 className="flex items-center gap-2 px-4 py-2 bg-pink-500 text-white rounded-lg hover:bg-pink-600 disabled:opacity-50 font-medium"
               >
                 <Calendar className="w-4 h-4" />
-                {loading ? "Registering..." : "Register & Schedule an Appointment"}
+                {loading
+                  ? "Registering..."
+                  : "Register & Schedule an Appointment"}
               </button>
             </div>
           </div>
@@ -739,10 +983,16 @@ const PatientRegistrationForm = () => {
         </div>
 
         {/* Form */}
-        <form id="patient-form" onSubmit={handleSubmit} className="space-y-6 w-[95%]">
+        <form
+          id="patient-form"
+          onSubmit={handleSubmit}
+          className="space-y-6 w-[95%]"
+        >
           {/* Child's Information */}
           <div className="bg-white rounded-lg border border-gray-200 p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-6">Child's Information</h2>
+            <h2 className="text-lg font-semibold text-gray-900 mb-6">
+              Child's Information
+            </h2>
             <div className="space-y-6">
               {/* Child's Full Name */}
               <div>
@@ -798,7 +1048,9 @@ const PatientRegistrationForm = () => {
                   </div>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Age</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Age
+                  </label>
                   <input
                     type="text"
                     name="age"
@@ -838,7 +1090,9 @@ const PatientRegistrationForm = () => {
                   </label>
                   <label
                     className={`flex items-center justify-center gap-2 px-4 py-3 rounded-lg cursor-pointer font-medium transition-colors ${
-                      uploadingPhoto ? "bg-gray-400 cursor-not-allowed" : "bg-pink-500 hover:bg-pink-600"
+                      uploadingPhoto
+                        ? "bg-gray-400 cursor-not-allowed"
+                        : "bg-pink-500 hover:bg-pink-600"
                     } text-white`}
                   >
                     {uploadingPhoto ? (
@@ -867,7 +1121,9 @@ const PatientRegistrationForm = () => {
                         alt="Child"
                         className="w-16 h-16 object-cover rounded-lg border-2 border-green-200"
                       />
-                      <div className="text-xs text-green-600 mt-1">✓ Photo uploaded</div>
+                      <div className="text-xs text-green-600 mt-1">
+                        ✓ Photo uploaded
+                      </div>
                     </div>
                   )}
                 </div>
@@ -879,7 +1135,9 @@ const PatientRegistrationForm = () => {
                   </label>
                   <label
                     className={`flex items-center justify-center gap-2 px-4 py-3 rounded-lg cursor-pointer font-medium transition-colors ${
-                      uploadingBirthCert ? "bg-gray-400 cursor-not-allowed" : "bg-pink-500 hover:bg-pink-600"
+                      uploadingBirthCert
+                        ? "bg-gray-400 cursor-not-allowed"
+                        : "bg-pink-500 hover:bg-pink-600"
                     } text-white`}
                   >
                     {uploadingBirthCert ? (
@@ -908,11 +1166,15 @@ const PatientRegistrationForm = () => {
                         alt="Birth Certificate"
                         className="w-16 h-16 object-cover rounded-lg border-2 border-green-200"
                       />
-                      <div className="text-xs text-green-600 mt-1">✓ Certificate uploaded</div>
+                      <div className="text-xs text-green-600 mt-1">
+                        ✓ Certificate uploaded
+                      </div>
                     </div>
                   )}
                   {birthCertificateUrl && !birthCertificatePreview && (
-                    <div className="mt-2 text-xs text-green-600">✓ PDF uploaded successfully</div>
+                    <div className="mt-2 text-xs text-green-600">
+                      ✓ PDF uploaded successfully
+                    </div>
                   )}
                 </div>
               </div>
@@ -921,7 +1183,9 @@ const PatientRegistrationForm = () => {
 
           {/* Parent's Information */}
           <div className="bg-white rounded-lg border border-gray-200 p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-6">Parent's Information</h2>
+            <h2 className="text-lg font-semibold text-gray-900 mb-6">
+              Parent's Information
+            </h2>
             <div className="space-y-6">
               {/* Father's Information */}
               <div className="border-b border-gray-200 pb-6">
@@ -944,18 +1208,25 @@ const PatientRegistrationForm = () => {
                 {/* Father's Contact Number */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Father Contact Number <span className="text-red-500">*</span>
+                    Father Contact Number{" "}
+                    <span className="text-red-500">*</span>
                   </label>
-                  <input
-                    ref={fieldRefs.parentPhone}
-                    type="tel"
-                    name="parentInfo.phone"
-                    value={formData.parentInfo.phone}
-                    onChange={handleInputChange}
-                    placeholder="Enter father's contact number here"
-                    required
-                    className="w-full px-3 py-3 border border-gray-300 rounded-lg text-black focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-pink-500"
-                  />
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                      <span className="text-gray-600 font-medium">+91</span>
+                    </div>
+                    <input
+                      ref={fieldRefs.parentPhone}
+                      type="tel"
+                      name="parentInfo.phone"
+                      value={formData.parentInfo.phone}
+                      onChange={handleInputChange}
+                      placeholder="Enter father's 10-digit contact number"
+                      required
+                      maxLength={10}
+                      className="w-full pl-12 pr-3 py-3 border border-gray-300 rounded-lg text-black focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-pink-500"
+                    />
+                  </div>
                 </div>
               </div>
 
@@ -978,27 +1249,112 @@ const PatientRegistrationForm = () => {
                   />
                 </div>
                 {/* Mother's Contact Number */}
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Mother Contact Number <span className="text-red-500">*</span>
+                    Mother Contact Number{" "}
+                    <span className="text-red-500">*</span>
                   </label>
-                  <input
-                    ref={fieldRefs.motherPhone}
-                    type="tel"
-                    name="parentInfo.motherPhone"
-                    value={formData.parentInfo.motherPhone}
-                    onChange={handleInputChange}
-                    placeholder="Enter mother's contact number here"
-                    required
-                    className="w-full px-3 py-3 border border-gray-300 rounded-lg text-black focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-pink-500"
-                  />
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                      <span className="text-gray-600 font-medium">+91</span>
+                    </div>
+                    <input
+                      ref={fieldRefs.motherPhone}
+                      type="tel"
+                      name="parentInfo.motherPhone"
+                      value={formData.parentInfo.motherPhone}
+                      onChange={handleInputChange}
+                      placeholder="Enter mother's 10-digit contact number"
+                      required
+                      maxLength={10}
+                      className="w-full pl-12 pr-3 py-3 border border-gray-300 rounded-lg text-black focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-pink-500"
+                    />
+                  </div>
                 </div>
+              </div>
+
+              {/* Number where WhatsApp Should Go */}
+              <div className="border-b border-gray-200 pb-6">
+                <label className="block text-sm font-medium text-gray-700 mb-3">
+                  WhatsApp Contact <span className="text-red-500">*</span>
+                </label>
+
+                <div className="space-y-3">
+                  {/* Father's Number Option */}
+                  <div className="flex items-center p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+                    <input
+                      ref={fieldRefs.whatsappContact}
+                      type="radio"
+                      id="whatsapp-father"
+                      name="whatsappContactType"
+                      value="father"
+                      checked={formData.whatsappContactType === "father"}
+                      onChange={handleInputChange}
+                      className="w-4 h-4 text-pink-600 bg-gray-100 border-gray-300 focus:ring-pink-500 focus:ring-2"
+                    />
+                    <label htmlFor="whatsapp-father" className="ml-3 flex-1">
+                      <div className="text-sm font-medium text-gray-900">
+                        Father's Number
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        {formData.parentInfo.phone || "No number entered yet"}
+                      </div>
+                    </label>
+                  </div>
+
+                  {/* Mother's Number Option */}
+                  <div className="flex items-center p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+                    <input
+                      type="radio"
+                      id="whatsapp-mother"
+                      name="whatsappContactType"
+                      value="mother"
+                      checked={formData.whatsappContactType === "mother"}
+                      onChange={handleInputChange}
+                      className="w-4 h-4 text-pink-600 bg-gray-100 border-gray-300 focus:ring-pink-500 focus:ring-2"
+                    />
+                    <label htmlFor="whatsapp-mother" className="ml-3 flex-1">
+                      <div className="text-sm font-medium text-gray-900">
+                        Mother's Number
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        {formData.parentInfo.motherPhone ||
+                          "No number entered yet"}
+                      </div>
+                    </label>
+                  </div>
+                </div>
+
+                {/* Selected WhatsApp Number Display */}
+                {formData.whatsappContact && (
+                  <div className="mt-4 p-3 bg-pink-50 border border-pink-200 rounded-lg">
+                    <div className="flex items-center">
+                      <svg
+                        className="w-5 h-5 text-pink-600 mr-2"
+                        fill="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893A11.821 11.821 0 0020.885 3.787" />
+                      </svg>
+                      <div>
+                        <div className="text-sm font-medium text-pink-800">
+                          Selected WhatsApp Number
+                        </div>
+                        <div className="text-sm text-pink-700 font-mono">
+                          {formData.whatsappContact}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Email Address */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Parent Email Address <span className="text-gray-500">{"(Optional)"}</span>
+                  Parent Email Address{" "}
+                  <span className="text-gray-500">{"(Optional)"}</span>
                 </label>
                 <input
                   type="email"
@@ -1013,7 +1369,8 @@ const PatientRegistrationForm = () => {
               {/* NEW FIELDS - Child Symptoms */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Child Symptoms <span className="text-gray-500">{"(Optional)"}</span>
+                  Child Symptoms{" "}
+                  <span className="text-gray-500">{"(Optional)"}</span>
                 </label>
                 <SymptomsMultiSelect
                   selectedSymptoms={formData.childSymptoms}
@@ -1071,7 +1428,9 @@ const PatientRegistrationForm = () => {
                   className="flex items-center gap-2 px-4 py-2 bg-pink-500 text-white rounded-lg hover:bg-pink-600 disabled:opacity-50 font-medium"
                 >
                   <Calendar className="w-4 h-4" />
-                  {loading ? "Registering..." : "Register & Schedule an Appointment"}
+                  {loading
+                    ? "Registering..."
+                    : "Register & Schedule an Appointment"}
                 </button>
               </div>
             </div>
@@ -1079,7 +1438,7 @@ const PatientRegistrationForm = () => {
         </form>
       </div>
     </ToastContext.Provider>
-  )
-}
+  );
+};
 
-export default PatientRegistrationForm
+export default PatientRegistrationForm;
