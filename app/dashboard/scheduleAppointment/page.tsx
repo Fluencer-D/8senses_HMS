@@ -32,8 +32,11 @@ interface CalendarAppointment {
 interface CalendarApiResponse {
   success: boolean
   data: {
-    [doctorName: string]: {
-      [timeSlot: string]: CalendarAppointment | null
+    [doctorId: string]: {
+      name: string
+      slots: {
+        [timeSlot: string]: CalendarAppointment | null
+      }
     }
   }
   patients: Patient[]
@@ -45,6 +48,7 @@ interface Patient {
   childName?: string
   fullName?: string
   firstName?: string
+  lastName?: string
   lastname?: string
   parentName?: string
   contactNumber?: string
@@ -52,6 +56,8 @@ interface Patient {
   address?: string
   childDOB?: string
   gender?: string
+  whatsappContact?: string
+  whatsappContactType?: "father" | "mother"
   parentInfo?: {
     name?: string
     phone?: string
@@ -141,6 +147,8 @@ const AppointmentSchedulingContent = () => {
     fatherName: "",
     email: "",
     phone: "",
+    whatsappContact: "",
+    whatsappContactType: "" as "father" | "mother" | "",
     address: "",
     notes: "",
     serviceId: "",
@@ -203,7 +211,7 @@ const AppointmentSchedulingContent = () => {
         const doctorIds = Object.keys(apiResponse.data)
         const doctorDetails = doctorIds.map((id) => ({
           id,
-          name: apiResponse.data[id].name,
+          name: apiResponse.data[id]?.name || "Unknown Doctor",
         }))
         setAvailableDoctors(doctorDetails)
         if (persistentDoctor && doctorId === persistentDoctor.id) {
@@ -551,7 +559,7 @@ const AppointmentSchedulingContent = () => {
   useEffect(() => {
     if (formData.doctor && calendarData[formData.doctor]) {
       const doctorSlots = calendarData[formData.doctor].slots
-      let availableSlots = Object.keys(doctorSlots).filter((timeSlot) => doctorSlots[timeSlot] === null)
+      let availableSlots = Object.keys(doctorSlots).filter((timeSlot) => doctorSlots?.[timeSlot] === null)
       if (formData.appointmentDates.length > 0) {
         const scheduledSlotsForCurrentDates = scheduledAppointments
           .filter((apt) => formData.appointmentDates.includes(apt.date))
@@ -774,6 +782,8 @@ const AppointmentSchedulingContent = () => {
           fatherName: formData.fatherName || formData.patientName,
           email: formData.email,
           phone: formData.phone,
+          whatsappContact: formData.whatsappContact,
+          whatsappContactType: formData.whatsappContactType,
           serviceId: persistentService?._id || formData.serviceId,
           therapistId: persistentDoctor?.id || scheduledAppointments[0]?.therapist?.id,
           scheduledAppointments: scheduledAppointments.map((apt) => ({
@@ -818,6 +828,8 @@ const AppointmentSchedulingContent = () => {
           fatherName: formData.fatherName || formData.patientName,
           email: formData.email,
           phone: formData.phone,
+          whatsappContact: formData.whatsappContact,
+          whatsappContactType: formData.whatsappContactType,
           serviceId: formData.serviceId,
           therapistId: formData.doctor,
           dates: formData.appointmentDates,
@@ -1672,12 +1684,16 @@ const AppointmentSchedulingContent = () => {
                             const phone = patient?.contactNumber || patient?.parentInfo?.phone || ""
                             const motherPhone = patient?.parentInfo?.motherPhone || ""
                             const address = patient?.address || patient?.parentInfo?.address || ""
+                            const whatsappContact = patient?.whatsappContact || ""
+                            const whatsappContactType = patient?.whatsappContactType || ""
                             setFormData({
                               ...formData,
                               patientName: childName,
                               fatherName: parentName,
                               email: email,
                               phone: motherPhone,
+                              whatsappContact: whatsappContact,
+                              whatsappContactType: whatsappContactType,
                               address: address,
                             })
                             setShowPatientSearch(false)
@@ -1688,7 +1704,7 @@ const AppointmentSchedulingContent = () => {
                           <div className="flex justify-between items-start">
                             <div>
                               <div className="font-medium text-gray-900">
-                                {patient?.childName || patient?.fullName || patient?.firstName + patient?.lastName}
+                                {patient?.childName || patient?.fullName || `${patient?.firstName || ""} ${patient?.lastName || ""}`.trim()}
                               </div>
                               <div className="text-sm text-gray-600">
                                 Parent: {patient?.parentName || patient?.parentInfo?.name} | Phone:{" "}
@@ -1723,9 +1739,75 @@ const AppointmentSchedulingContent = () => {
                       Parent: {selectedPatient?.parentName || selectedPatient?.parentInfo?.name} | Phone:{" "}
                       {selectedPatient?.contactNumber || selectedPatient?.parentInfo?.phone}
                     </div>
+                    {selectedPatient?.whatsappContact && (
+                      <div className="text-xs mt-1 text-green-700">
+                        WhatsApp: {selectedPatient.whatsappContact} ({selectedPatient.whatsappContactType})
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
+
+              {/* Conditional WhatsApp Contact Fields - Only show if patient doesn't have WhatsApp info */}
+              {selectedPatient && !selectedPatient?.whatsappContact && (
+                <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                  <div className="flex items-center gap-2 mb-3">
+                    <svg 
+                      className="w-5 h-5 text-green-600" 
+                      viewBox="0 0 24 24" 
+                      fill="currentColor"
+                    >
+                      <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893A11.821 11.821 0 0020.465 3.516"/>
+                    </svg>
+                    <h3 className="text-sm font-medium text-yellow-800">
+                      Add WhatsApp Contact for Appointment Reminders
+                    </h3>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-yellow-700 mb-2 text-sm" htmlFor="whatsappContact">
+                        WhatsApp Number
+                      </label>
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-600 font-medium">
+                          +91
+                        </span>
+                        <input
+                          type="tel"
+                          id="whatsappContact"
+                          name="whatsappContact"
+                          value={formData.whatsappContact}
+                          onChange={handleInputChange}
+                          placeholder="Enter 10-digit number"
+                          maxLength={10}
+                          pattern="[0-9]{10}"
+                          className="w-full pl-12 pr-3 py-3 border border-yellow-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500 bg-white text-gray-900"
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-yellow-700 mb-2 text-sm" htmlFor="whatsappContactType">
+                        Contact Type
+                      </label>
+                      <select
+                        id="whatsappContactType"
+                        name="whatsappContactType"
+                        value={formData.whatsappContactType}
+                        onChange={handleInputChange}
+                        className="w-full p-3 border border-yellow-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500 bg-white text-gray-900"
+                      >
+                        <option value="">Select contact type</option>
+                        <option value="father">Father</option>
+                        <option value="mother">Mother</option>
+                      </select>
+                    </div>
+                  </div>
+                  <p className="text-xs text-yellow-600 mt-2">
+                    This information will be saved for future appointment reminders
+                  </p>
+                </div>
+              )}
+
             </div>
           )}
         </div>
@@ -1823,7 +1905,7 @@ const AppointmentSchedulingContent = () => {
                 step="0.01"
                 className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C83C92] bg-gray-100 text-[#858D9D]"
                 placeholder="Enter payment amount"
-                onWheel={(e) => e.target.blur()}
+                onWheel={(e) => (e.target as HTMLInputElement).blur()}
               />
             </div>
           </div>

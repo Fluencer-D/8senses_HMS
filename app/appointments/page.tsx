@@ -1300,7 +1300,7 @@ const AppointmentsEnhancedPage: React.FC = () => {
         }
       })
 
-      const sortedData = transformedData.sort((a, b) => {
+      const sortedData = transformedData.sort((a: CombinedAppointmentData, b: CombinedAppointmentData) => {
   // Make sure createdAt exists and is comparable
   return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
 })
@@ -1337,8 +1337,8 @@ const AppointmentsEnhancedPage: React.FC = () => {
           if (item.status === "cancelled" || item.status === "no-show") {
             acc.cancelledAppointments += 1
           }
-          acc.totalRevenue += item.paidRevenue
-          if (item.pendingRevenue > 0) {
+          acc.totalRevenue += (item as GroupSession).paidRevenue
+          if ((item as GroupSession).pendingRevenue > 0) {
             acc.pendingPayments += 1
           }
         } else {
@@ -1359,10 +1359,10 @@ const AppointmentsEnhancedPage: React.FC = () => {
           }
           if (apt.payment.status === "paid") {
             acc.totalRevenue += apt.payment.amount
-          } else if (apt.payment.status === "partial") {
-            acc.totalRevenue += apt.payment.paidAmount || 0
+          } else if (apt.payment.status === "pending" && apt.payment.paidAmount) {
+            acc.totalRevenue += apt.payment.paidAmount
           }
-          if (apt.payment.status === "pending" || apt.payment.status === "partial") {
+          if (apt.payment.status === "pending") {
             acc.pendingPayments += 1
           }
         }
@@ -1667,7 +1667,7 @@ const AppointmentsEnhancedPage: React.FC = () => {
   // Utility functions
   const getPatientName = (appointment: CombinedAppointmentData): string => {
     if ("isGroupSession" in appointment && appointment.isGroupSession) {
-      return appointment.groupSessionName
+      return (appointment as GroupSession).groupSessionName
     } else {
       const individualAppointment = appointment as AppointmentDetails
       return (
@@ -1681,7 +1681,7 @@ const AppointmentsEnhancedPage: React.FC = () => {
 
   const getContactInfo = (appointment: CombinedAppointmentData): string => {
     if ("isGroupSession" in appointment && appointment.isGroupSession) {
-      return `${appointment.patients.length} patients`
+      return `${(appointment as GroupSession).patients.length} patients`
     } else {
       const individualAppointment = appointment as AppointmentDetails
       return individualAppointment.phone || individualAppointment.patientId?.parentInfo?.phone || "N/A"
@@ -1761,18 +1761,19 @@ const AppointmentsEnhancedPage: React.FC = () => {
         ],
         ...filteredAppointments.map((item) => {
           if ("isGroupSession" in item && item.isGroupSession) {
+            const groupItem = item as GroupSession
             return [
-              formatDate(item.date),
-              item.startTime,
-              item.groupSessionName,
-              item.therapistId.fullName,
-              item.serviceId.name,
+              formatDate(groupItem.date),
+              groupItem.startTime,
+              groupItem.groupSessionName,
+              groupItem.therapistId.fullName,
+              groupItem.serviceId.name,
               "Group Session",
-              item.status,
+              groupItem.status,
               "Mixed",
-              item.totalRevenue.toString(),
-              `${item.patients.length} patients`,
-              item.consultationMode,
+              groupItem.totalRevenue.toString(),
+              `${groupItem.patients.length} patients`,
+              groupItem.consultationMode,
               "Yes",
             ]
           } else {
@@ -1824,17 +1825,18 @@ const AppointmentsEnhancedPage: React.FC = () => {
     if (filters.appointmentType === "individual") {
       matchesAppointmentType = !("isGroupSession" in item && item.isGroupSession)
     } else if (filters.appointmentType === "group") {
-      matchesAppointmentType = "isGroupSession" in item && item.isGroupSession
+      matchesAppointmentType = "isGroupSession" in item && item.isGroupSession === true
     }
 
     if ("isGroupSession" in item && item.isGroupSession) {
       // Group session search
+      const groupItem = item as GroupSession
       matchesSearch =
-        item.groupSessionName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        item.therapistId.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        item.serviceId.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        item.patients.some(
-          (p) => p.patientName.toLowerCase().includes(searchTerm.toLowerCase()) || p.phone.includes(searchTerm),
+        groupItem.groupSessionName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        groupItem.therapistId.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        groupItem.serviceId.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        groupItem.patients.some(
+          (p: PatientInGroup) => p.patientName.toLowerCase().includes(searchTerm.toLowerCase()) || p.phone.includes(searchTerm),
         )
     } else {
       // Individual appointment search
@@ -2199,7 +2201,7 @@ const AppointmentsEnhancedPage: React.FC = () => {
                   return (
                     <GroupSessionRow
                       key={item._id}
-                      groupSession={item}
+                      groupSession={item as GroupSession}
                       onStatusUpdate={updateAppointmentStatus}
                       onRescheduleClick={handleRescheduleClick}
                       onDetailsClick={openDetailsModal}
@@ -2463,7 +2465,7 @@ const AppointmentDetailsModal: React.FC<{
                   <label className="block text-sm font-medium text-gray-700 mb-1">Group Session Name</label>
                   <div className="flex items-center gap-2">
                     <Users className="w-4 h-4 text-gray-400" />
-                    <span className="text-[#456696] font-medium">{appointment.groupSessionName}</span>
+                    <span className="text-[#456696] font-medium">{(appointment as GroupSession).groupSessionName}</span>
                   </div>
                 </div>
                 <div>
@@ -2498,7 +2500,7 @@ const AppointmentDetailsModal: React.FC<{
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Capacity</label>
                   <div className="text-[#456696]">
-                    {appointment.patients.length} / {appointment.maxCapacity} patients
+                    {(appointment as GroupSession).patients.length} / {(appointment as GroupSession).maxCapacity} patients
                   </div>
                 </div>
               </div>
@@ -2517,9 +2519,9 @@ const AppointmentDetailsModal: React.FC<{
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Revenue Summary</label>
                 <div className="space-y-1">
-                  <div className="text-sm">Total Revenue: ₹{appointment.totalRevenue}</div>
-                  <div className="text-sm text-green-600">Paid: ₹{appointment.paidRevenue}</div>
-                  <div className="text-sm text-yellow-600">Pending: ₹{appointment.pendingRevenue}</div>
+                  <div className="text-sm">Total Revenue: ₹{(appointment as GroupSession).totalRevenue}</div>
+                  <div className="text-sm text-green-600">Paid: ₹{(appointment as GroupSession).paidRevenue}</div>
+                  <div className="text-sm text-yellow-600">Pending: ₹{(appointment as GroupSession).pendingRevenue}</div>
                 </div>
               </div>
             </div>
@@ -2528,7 +2530,7 @@ const AppointmentDetailsModal: React.FC<{
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-3">Patients in Group Session</label>
               <div className="space-y-3">
-                {appointment.patients.map((patient, index) => (
+                {(appointment as GroupSession).patients.map((patient: PatientInGroup, index: number) => (
                   <div key={patient._id} className="border border-gray-200 rounded-lg p-4">
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       <div>

@@ -1,4 +1,49 @@
 
+export interface AppointmentDetails {
+  _id: string
+  id: string
+  date: string
+  startTime: string
+  endTime: string
+  patientName: string
+  patientId: {
+    _id: string
+    fullName?: string
+    childName?: string
+    parentInfo?: {
+      name: string
+      phone: string
+      email: string
+    }
+  }
+  therapistId: {
+    _id: string
+    fullName: string
+  }
+  serviceId: {
+    name: string
+    price: number
+  }
+  type: "initial assessment" | "therapy session" | "follow-up" | "other" | "group therapy session"
+  status: "scheduled" | "completed" | "cancelled" | "no-show" | "rescheduled" | "confirmed"
+  consultationMode: "in-person" | "video-call" | "phone"
+  payment: {
+    amount: number
+    status: "pending" | "paid" | "refunded"
+    method: "cash" | "card" | "insurance" | "not_specified" | "upi"
+    paidAmount?: number
+  }
+  totalSessions: number
+  sessionsCompleted: number
+  sessionsPaid: number
+  phone: string
+  email: string
+  notes?: string
+  createdAt: string
+  updatedAt: string
+  isGroupSession?: boolean
+}
+
 export interface PatientWithAppointments {
   _id: string
   firstName?: string
@@ -21,6 +66,9 @@ export interface PatientWithAppointments {
   // NEW FIELDS - Child Symptoms and Notes
   childSymptoms?: string[]
   notes?: string
+  // WhatsApp Contact Information
+  whatsappContact?: string
+  whatsappContactType?: "father" | "mother"
   parentInfo?: {
     name: string
     phone: string
