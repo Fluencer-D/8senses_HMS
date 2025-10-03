@@ -39,6 +39,8 @@ export interface AppointmentDetails {
   phone: string
   email: string
   notes?: string
+  whatsappContact?: string
+  whatsappContactType?: "father" | "mother"
   createdAt: string
   updatedAt: string
   isGroupSession?: boolean
