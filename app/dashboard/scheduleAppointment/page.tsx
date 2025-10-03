@@ -145,8 +145,10 @@ const AppointmentSchedulingContent = () => {
     primaryConcern: "",
     patientName: "",
     fatherName: "",
+    motherName:"",
     email: "",
     phone: "",
+    motherPhone:"",
     whatsappContact: "",
     whatsappContactType: "" as "father" | "mother" | "",
     address: "",
@@ -660,6 +662,8 @@ const AppointmentSchedulingContent = () => {
     e.preventDefault()
     setFieldErrors({})
     setShowValidation(false)
+    
+        console.log(formData.phone,"phone check lolllllllllllllllllllllllll")
     const errors: { [key: string]: boolean } = {}
     console.log("=== FORM SUBMISSION DEBUG ===")
     console.log("Form Data:", formData)
@@ -721,6 +725,7 @@ const AppointmentSchedulingContent = () => {
       return
     }
     setLoading(true)
+
     try {
       let appointmentData
       if (formData.isGroupSession) {
@@ -826,6 +831,8 @@ const AppointmentSchedulingContent = () => {
           patientId: selectedPatient?._id,
           patientName: formData.patientName || selectedPatient?.firstName + " " + selectedPatient?.lastName,
           fatherName: formData.fatherName || formData.patientName,
+          motherName:formData.motherName,
+          motherPhone:formData.motherPhone,
           email: formData.email,
           phone: formData.phone,
           whatsappContact: formData.whatsappContact,
@@ -844,6 +851,8 @@ const AppointmentSchedulingContent = () => {
           consent: formData.consent,
           totalSessions: formData.totalSessions,
         }
+
+        console.log(appointmentData,"checking here lol")
         const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/appointments/multiple`, {
           method: "POST",
           headers: {
@@ -852,6 +861,7 @@ const AppointmentSchedulingContent = () => {
           },
           body: JSON.stringify(appointmentData),
         })
+        console.log("came her after failure lolllll")
         if (!response.ok) {
           let errorMessage = "Failed to create appointments"
           try {
@@ -1691,7 +1701,7 @@ const AppointmentSchedulingContent = () => {
                               patientName: childName,
                               fatherName: parentName,
                               email: email,
-                              phone: motherPhone,
+                              phone: phone,
                               whatsappContact: whatsappContact,
                               whatsappContactType: whatsappContactType,
                               address: address,
