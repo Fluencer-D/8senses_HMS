@@ -662,8 +662,6 @@ const AppointmentSchedulingContent = () => {
     e.preventDefault()
     setFieldErrors({})
     setShowValidation(false)
-    
-        console.log(formData.phone,"phone check lolllllllllllllllllllllllll")
     const errors: { [key: string]: boolean } = {}
     console.log("=== FORM SUBMISSION DEBUG ===")
     console.log("Form Data:", formData)
@@ -852,7 +850,6 @@ const AppointmentSchedulingContent = () => {
           totalSessions: formData.totalSessions,
         }
 
-        console.log(appointmentData,"checking here lol")
         const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/appointments/multiple`, {
           method: "POST",
           headers: {
@@ -861,7 +858,6 @@ const AppointmentSchedulingContent = () => {
           },
           body: JSON.stringify(appointmentData),
         })
-        console.log("came her after failure lolllll")
         if (!response.ok) {
           let errorMessage = "Failed to create appointments"
           try {
