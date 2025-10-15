@@ -1,99 +1,123 @@
-"use client"
-import type React from "react"
-import { useState, useEffect } from "react"
-import { Search, X, CreditCard, Loader2, Clock, CheckCircle, AlertCircle, Eye, Users, TrendingUp, Download, RefreshCw, User, FileText, Edit, Save, ChevronDown, Upload, Trash2 } from 'lucide-react'
+"use client";
+import type React from "react";
+import { useState, useEffect } from "react";
+import {
+  Search,
+  X,
+  CreditCard,
+  Loader2,
+  Clock,
+  CheckCircle,
+  AlertCircle,
+  Eye,
+  Users,
+  TrendingUp,
+  Download,
+  RefreshCw,
+  User,
+  FileText,
+  Edit,
+  Save,
+  ChevronDown,
+  Upload,
+  Trash2,
+} from "lucide-react";
 
 // Enhanced interfaces for comprehensive appointment and payment management
 interface AppointmentDetails {
-  _id: string
-  date: string
-  startTime: string
-  endTime: string
-  type: string
-  status: "scheduled" | "completed" | "cancelled" | "no-show"
+  _id: string;
+  date: string;
+  startTime: string;
+  endTime: string;
+  type: string;
+  status: "scheduled" | "completed" | "cancelled" | "no-show";
   // NEW: Group session fields
-  isGroupSession?: boolean
-  groupSessionName?: string | null
-  groupSessionId?: string | null
-  maxCapacity?: number | null
+  isGroupSession?: boolean;
+  groupSessionName?: string | null;
+  groupSessionId?: string | null;
+  maxCapacity?: number | null;
   payment: {
-    amount: number
-    status: "pending" | "paid" | "partial" | "refunded"
-    method: "cash" | "card" | "insurance" | "not_specified"
-    paidAmount?: number
-  }
+    amount: number;
+    status: "pending" | "paid" | "partial" | "refunded";
+    method: "cash" | "card" | "insurance" | "not_specified";
+    paidAmount?: number;
+  };
   service: {
-    name: string
-    price: number
-  }
+    name: string;
+    price: number;
+  };
   therapist: {
-    name: string
-    _id: string
-  }
-  totalSessions: number
-  sessionsCompleted: number
-  sessionsPaid: number
+    name: string;
+    _id: string;
+  };
+  totalSessions: number;
+  sessionsCompleted: number;
+  sessionsPaid: number;
 }
 
 interface PatientWithAppointments {
-  _id: string
-  firstName?: string
-  lastName?: string
-  fullName?: string
-  childName?: string
-  dateOfBirth?: string
-  childDOB?: string
-  gender?: string
-  childGender?: string
+  _id: string;
+  firstName?: string;
+  lastName?: string;
+  fullName?: string;
+  childName?: string;
+  dateOfBirth?: string;
+  childDOB?: string;
+  gender?: string;
+  childGender?: string;
   // Added photo and birth certificate fields
   photo?: {
-    url: string
-    public_id: string
-  } | null
+    url: string;
+    public_id: string;
+  } | null;
   birthCertificate?: {
-    url: string
-    public_id: string
-  } | null
+    url: string;
+    public_id: string;
+  } | null;
   // NEW FIELDS - Child Symptoms and Notes
-  childSymptoms?: string[]
-  notes?: string
+  childSymptoms?: string[];
+  notes?: string;
+  // WhatsApp Contact Information
+  whatsappContact?: string;
+  whatsappContactType?: "father" | "mother";
   parentInfo?: {
-    name: string
-    phone: string
-    email: string
-    relationship?: string
-    address?: string
-    motherName?: string
-    motherphone?: string
-  }
-  parentName?: string
-  contactNumber?: string
-  email?: string
-  appointments: AppointmentDetails[]
-  totalAppointments: number
-  completedAppointments: number
-  pendingPayments: number
-  totalOwed: number
-  totalPaid: number
-  status?: string
-  createdAt: string
-  updatedAt: string
+    name: string;
+    phone: string;
+    email: string;
+    relationship?: string;
+    address?: string;
+    motherName?: string;
+    motherPhone?: string;
+    motherphone?: string; // Keep for backwards compatibility
+  };
+  parentName?: string;
+  contactNumber?: string;
+  email?: string;
+  appointments: AppointmentDetails[];
+  totalAppointments: number;
+  completedAppointments: number;
+  pendingPayments: number;
+  totalOwed: number;
+  totalPaid: number;
+  status?: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 interface PaymentSummary {
-  totalPatients: number
-  totalRevenue: number
-  pendingPayments: number
-  completedPayments: number
-  partialPayments: number
+  totalPatients: number;
+  totalRevenue: number;
+  pendingPayments: number;
+  completedPayments: number;
+  partialPayments: number;
 }
 
 // Payment modal types
 interface PaymentModalData {
-  patient: PatientWithAppointments
-  selectedAppointments: string[]
-  paymentType: "single" | "partial" | "full"
-  customAmount?: number
+  patient: PatientWithAppointments;
+  selectedAppointments: string[];
+  paymentType: "single" | "partial" | "full";
+  customAmount?: number;
 }
 
 // Child Symptoms Data
@@ -125,24 +149,24 @@ const CHILD_SYMPTOMS = [
   "Developmental disorders",
   "Genetic disorders",
   "Others",
-]
+];
 
 // NEW COMPONENT - Delete Confirmation Modal
 const DeleteConfirmationModal: React.FC<{
-  patient: PatientWithAppointments
-  isOpen: boolean
-  onClose: () => void
-  onConfirm: () => void
-  isDeleting: boolean
+  patient: PatientWithAppointments;
+  isOpen: boolean;
+  onClose: () => void;
+  onConfirm: () => void;
+  isDeleting: boolean;
 }> = ({ patient, isOpen, onClose, onConfirm, isDeleting }) => {
-  if (!isOpen) return null
+  if (!isOpen) return null;
 
   const getPatientName = (patient: PatientWithAppointments): string => {
     if (patient.firstName && patient.lastName) {
-      return `${patient.firstName} ${patient.lastName}`
+      return `${patient.firstName} ${patient.lastName}`;
     }
-    return patient.fullName || patient.childName || "Unknown"
-  }
+    return patient.fullName || patient.childName || "Unknown";
+  };
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
@@ -153,20 +177,34 @@ const DeleteConfirmationModal: React.FC<{
             <div className="p-2 bg-red-100 rounded-lg">
               <Trash2 className="w-5 h-5 text-red-600" />
             </div>
-            <h3 className="text-xl font-semibold text-gray-900">Delete Patient</h3>
+            <h3 className="text-xl font-semibold text-gray-900">
+              Delete Patient
+            </h3>
           </div>
-          <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+          <button
+            onClick={onClose}
+            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+          >
             <X className="w-6 h-6 text-gray-500" />
           </button>
         </div>
         {/* Content */}
         <div className="p-6">
           <div className="mb-4">
-            <p className="text-gray-700 mb-2">Are you sure you want to delete the patient record for:</p>
+            <p className="text-gray-700 mb-2">
+              Are you sure you want to delete the patient record for:
+            </p>
             <div className="bg-red-50 border border-red-200 rounded-lg p-3">
-              <p className="font-semibold text-red-800">{getPatientName(patient)}</p>
-              <p className="text-sm text-red-600">Parent: {patient.parentInfo?.name || patient.parentName || "N/A"}</p>
-              <p className="text-sm text-red-600">Total Appointments: {patient.totalAppointments}</p>
+              <p className="font-semibold text-red-800">
+                {getPatientName(patient)}
+              </p>
+              <p className="text-sm text-red-600">
+                Parent:{" "}
+                {patient.parentInfo?.name || patient.parentName || "N/A"}
+              </p>
+              <p className="text-sm text-red-600">
+                Total Appointments: {patient.totalAppointments}
+              </p>
             </div>
           </div>
           <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-4">
@@ -175,8 +213,8 @@ const DeleteConfirmationModal: React.FC<{
               <div>
                 <p className="text-sm font-medium text-yellow-800">Warning</p>
                 <p className="text-sm text-yellow-700">
-                  This action cannot be undone. All patient data, appointments, and payment history will be permanently
-                  deleted.
+                  This action cannot be undone. All patient data, appointments,
+                  and payment history will be permanently deleted.
                 </p>
               </div>
             </div>
@@ -211,31 +249,35 @@ const DeleteConfirmationModal: React.FC<{
         </div>
       </div>
     </div>
-  )
-}
+  );
+};
 
 // Multi-Select Symptoms Component for Edit Modal
 const SymptomsMultiSelect: React.FC<{
-  selectedSymptoms: string[]
-  onSymptomsChange: (symptoms: string[]) => void
+  selectedSymptoms: string[];
+  onSymptomsChange: (symptoms: string[]) => void;
 }> = ({ selectedSymptoms, onSymptomsChange }) => {
-  const [isOpen, setIsOpen] = useState(false)
-  const [searchTerm, setSearchTerm] = useState("")
+  const [isOpen, setIsOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
 
   const filteredSymptoms = CHILD_SYMPTOMS.filter(
-    (symptom) => symptom.toLowerCase().includes(searchTerm.toLowerCase()) && !selectedSymptoms.includes(symptom),
-  )
+    (symptom) =>
+      symptom.toLowerCase().includes(searchTerm.toLowerCase()) &&
+      !selectedSymptoms.includes(symptom)
+  );
 
   const handleSymptomSelect = (symptom: string) => {
     if (!selectedSymptoms.includes(symptom)) {
-      onSymptomsChange([...selectedSymptoms, symptom])
+      onSymptomsChange([...selectedSymptoms, symptom]);
     }
-    setSearchTerm("")
-  }
+    setSearchTerm("");
+  };
 
   const handleSymptomRemove = (symptomToRemove: string) => {
-    onSymptomsChange(selectedSymptoms.filter((symptom) => symptom !== symptomToRemove))
-  }
+    onSymptomsChange(
+      selectedSymptoms.filter((symptom) => symptom !== symptomToRemove)
+    );
+  };
 
   return (
     <div className="relative">
@@ -266,12 +308,22 @@ const SymptomsMultiSelect: React.FC<{
         onClick={() => setIsOpen(!isOpen)}
       >
         <div className="flex items-center justify-between">
-          <span className={selectedSymptoms.length > 0 ? "text-gray-900" : "text-gray-500"}>
+          <span
+            className={
+              selectedSymptoms.length > 0 ? "text-gray-900" : "text-gray-500"
+            }
+          >
             {selectedSymptoms.length > 0
-              ? `${selectedSymptoms.length} symptom${selectedSymptoms.length > 1 ? "s" : ""} selected`
+              ? `${selectedSymptoms.length} symptom${
+                  selectedSymptoms.length > 1 ? "s" : ""
+                } selected`
               : "Select child symptoms"}
           </span>
-          <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${isOpen ? "rotate-180" : ""}`} />
+          <ChevronDown
+            className={`w-4 h-4 text-gray-400 transition-transform ${
+              isOpen ? "rotate-180" : ""
+            }`}
+          />
         </div>
       </div>
 
@@ -314,19 +366,21 @@ const SymptomsMultiSelect: React.FC<{
         </div>
       )}
       {/* Overlay to close dropdown */}
-      {isOpen && <div className="fixed inset-0 z-5" onClick={() => setIsOpen(false)} />}
+      {isOpen && (
+        <div className="fixed inset-0 z-5" onClick={() => setIsOpen(false)} />
+      )}
     </div>
-  )
-}
+  );
+};
 
 // Edit Patient Modal Component
 const EditPatientModal: React.FC<{
-  patient: PatientWithAppointments
-  isOpen: boolean
-  onClose: () => void
-  onSave: (updatedPatient: Partial<PatientWithAppointments>) => void
+  patient: PatientWithAppointments;
+  isOpen: boolean;
+  onClose: () => void;
+  onSave: (updatedPatient: Partial<PatientWithAppointments>) => void;
 }> = ({ patient, isOpen, onClose, onSave }) => {
-  const [isLoading, setIsLoading] = useState(false)
+  const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
     firstName: patient.firstName || "",
     lastName: patient.lastName || "",
@@ -334,54 +388,66 @@ const EditPatientModal: React.FC<{
     gender: patient.gender || patient.childGender || "",
     childSymptoms: patient.childSymptoms || [],
     notes: patient.notes || "",
+    whatsappContact: patient.whatsappContact || "",
+    whatsappContactType: patient.whatsappContactType || "mother",
     parentInfo: {
       name: patient.parentInfo?.name || patient.parentName || "",
       phone: patient.parentInfo?.phone || patient.contactNumber || "",
       email: patient.parentInfo?.email || patient.email || "",
       motherName: patient.parentInfo?.motherName || "",
-      motherphone: patient.parentInfo?.motherphone || "",
+      motherPhone:
+        patient.parentInfo?.motherPhone ||
+        patient.parentInfo?.motherphone ||
+        "",
       relationship: patient.parentInfo?.relationship || "Guardian",
       address: patient.parentInfo?.address || "",
     },
-  })
+  });
 
   // Add these new state variables after the existing formData state:
-  const [uploadingPhoto, setUploadingPhoto] = useState(false)
-  const [uploadingBirthCert, setUploadingBirthCert] = useState(false)
-  const [childPhotoPreview, setChildPhotoPreview] = useState<string | null>(patient.photo?.url || null)
-  const [childPhotoUrl, setChildPhotoUrl] = useState<string>(patient.photo?.url || "")
-  const [childPhotoPublicId, setChildPhotoPublicId] = useState<string>(patient.photo?.public_id || "")
-  const [birthCertificatePreview, setBirthCertificatePreview] = useState<string | null>(
-    patient.birthCertificate?.url || null,
-  )
-  const [birthCertificateUrl, setBirthCertificateUrl] = useState<string>(patient.birthCertificate?.url || "")
-  const [birthCertificatePublicId, setBirthCertificatePublicId] = useState<string>(
-    patient.birthCertificate?.public_id || "",
-  )
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [uploadingBirthCert, setUploadingBirthCert] = useState(false);
+  const [childPhotoPreview, setChildPhotoPreview] = useState<string | null>(
+    patient.photo?.url || null
+  );
+  const [childPhotoUrl, setChildPhotoUrl] = useState<string>(
+    patient.photo?.url || ""
+  );
+  const [childPhotoPublicId, setChildPhotoPublicId] = useState<string>(
+    patient.photo?.public_id || ""
+  );
+  const [birthCertificatePreview, setBirthCertificatePreview] = useState<
+    string | null
+  >(patient.birthCertificate?.url || null);
+  const [birthCertificateUrl, setBirthCertificateUrl] = useState<string>(
+    patient.birthCertificate?.url || ""
+  );
+  const [birthCertificatePublicId, setBirthCertificatePublicId] =
+    useState<string>(patient.birthCertificate?.public_id || "");
 
   const handleInputChange = (field: string, value: any) => {
     if (field.startsWith("parentInfo.")) {
-      const parentField = field.split(".")[1]
+      const parentField = field.split(".")[1];
       setFormData((prev) => ({
         ...prev,
         parentInfo: {
           ...prev.parentInfo,
           [parentField]: value,
         },
-      }))
+      }));
     } else {
       setFormData((prev) => ({
         ...prev,
         [field]: value,
-      }))
+      }));
     }
-  }
+  };
 
   // Add the Cloudinary upload function after the handleInputChange function:
   const uploadToCloudinary = async (file: File, folder = "patients") => {
-    const formData = new FormData()
-    formData.append("file", file)
-    formData.append("upload_preset", "my_unsigned_preset") // Replace with your unsigned preset name
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("upload_preset", "my_unsigned_preset"); // Replace with your unsigned preset name
 
     try {
       const response = await fetch(
@@ -389,99 +455,121 @@ const EditPatientModal: React.FC<{
         {
           method: "POST",
           body: formData,
-        },
-      )
+        }
+      );
 
       if (!response.ok) {
-        throw new Error("Failed to upload image")
+        throw new Error("Failed to upload image");
       }
 
-      const data = await response.json()
+      const data = await response.json();
       return {
         url: data.secure_url,
         public_id: data.public_id,
-      }
+      };
     } catch (error) {
-      console.error("Cloudinary upload error:", error)
-      throw error
+      console.error("Cloudinary upload error:", error);
+      throw error;
     }
-  }
+  };
 
   // Add the file upload handler after the uploadToCloudinary function:
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, fileType: string) => {
-    const file = e.target.files?.[0]
-    if (!file) return
+  const handleFileUpload = async (
+    e: React.ChangeEvent<HTMLInputElement>,
+    fileType: string
+  ) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
 
     // Validate file size (max 5MB)
     if (file.size > 5 * 1024 * 1024) {
-      alert("Please select a file smaller than 5MB.")
-      return
+      alert("Please select a file smaller than 5MB.");
+      return;
     }
 
     // Validate file type
-    const allowedTypes = ["image/jpeg", "image/jpg", "image/png", "image/webp"]
+    const allowedTypes = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
     if (!allowedTypes.includes(file.type)) {
-      alert(`Please select a valid ${fileType === "birthCertificate" ? "image or PDF" : "image"} file.`)
-      return
+      alert(
+        `Please select a valid ${
+          fileType === "birthCertificate" ? "image or PDF" : "image"
+        } file.`
+      );
+      return;
     }
 
     try {
       // Set loading state
       if (fileType === "childPhoto") {
-        setUploadingPhoto(true)
+        setUploadingPhoto(true);
       } else if (fileType === "birthCertificate") {
-        setUploadingBirthCert(true)
+        setUploadingBirthCert(true);
       }
 
       // Create preview for images
       if (file.type.startsWith("image/")) {
-        const reader = new FileReader()
+        const reader = new FileReader();
         reader.onloadend = () => {
-          const result = reader.result as string
+          const result = reader.result as string;
           if (fileType === "childPhoto") {
-            setChildPhotoPreview(result)
+            setChildPhotoPreview(result);
           } else if (fileType === "birthCertificate") {
-            setBirthCertificatePreview(result)
+            setBirthCertificatePreview(result);
           }
-        }
-        reader.readAsDataURL(file)
+        };
+        reader.readAsDataURL(file);
       }
 
       // Upload to Cloudinary
       const uploadResult = await uploadToCloudinary(
         file,
-        fileType === "childPhoto" ? "patients/photos" : "patients/certificates",
-      )
+        fileType === "childPhoto" ? "patients/photos" : "patients/certificates"
+      );
 
       // Store the URLs and public IDs
       if (fileType === "childPhoto") {
-        setChildPhotoUrl(uploadResult.url)
-        setChildPhotoPublicId(uploadResult.public_id)
-        alert("Child photo uploaded successfully!")
+        setChildPhotoUrl(uploadResult.url);
+        setChildPhotoPublicId(uploadResult.public_id);
+        alert("Child photo uploaded successfully!");
       } else if (fileType === "birthCertificate") {
-        setBirthCertificateUrl(uploadResult.url)
-        setBirthCertificatePublicId(uploadResult.public_id)
-        alert("Birth certificate uploaded successfully!")
+        setBirthCertificateUrl(uploadResult.url);
+        setBirthCertificatePublicId(uploadResult.public_id);
+        alert("Birth certificate uploaded successfully!");
       }
     } catch (error) {
-      console.error("Upload error:", error)
-      alert(`Failed to upload ${fileType === "childPhoto" ? "photo" : "birth certificate"}. Please try again.`)
+      console.error("Upload error:", error);
+      alert(
+        `Failed to upload ${
+          fileType === "childPhoto" ? "photo" : "birth certificate"
+        }. Please try again.`
+      );
     } finally {
       // Reset loading state
       if (fileType === "childPhoto") {
-        setUploadingPhoto(false)
+        setUploadingPhoto(false);
       } else if (fileType === "birthCertificate") {
-        setUploadingBirthCert(false)
+        setUploadingBirthCert(false);
       }
     }
-  }
+  };
 
   // Update the handleSave function to include the uploaded files:
   const handleSave = async () => {
-    setIsLoading(true)
+    setIsLoading(true);
     try {
-      const updateData = {
+      // Clean up the data - remove empty strings and convert to proper format
+      const cleanedData = {
         ...formData,
+        // Clean up parent info - remove empty email if present
+        parentInfo: {
+          ...formData.parentInfo,
+          email: formData.parentInfo.email || undefined, // Convert empty string to undefined
+        },
+        // Only include whatsappContact if it has a value
+        whatsappContact: formData.whatsappContact || undefined,
+        whatsappContactType: formData.whatsappContact
+          ? formData.whatsappContactType
+          : undefined,
         // Include photo data if uploaded
         photo: childPhotoUrl
           ? {
@@ -496,33 +584,54 @@ const EditPatientModal: React.FC<{
               public_id: birthCertificatePublicId,
             }
           : patient.birthCertificate, // Keep existing certificate if no new upload
-      }
+      };
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/patients/${patient._id}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("receptionToken")}`,
-        },
-        body: JSON.stringify(updateData),
-      })
+      console.log("Sending update data:", cleanedData);
+
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/patients/${patient._id}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("receptionToken")}`,
+          },
+          body: JSON.stringify(cleanedData),
+        }
+      );
 
       if (!response.ok) {
-        throw new Error("Failed to update patient")
+        const errorData = await response.json();
+        console.error("Server error response:", errorData);
+
+        // Format validation errors if present
+        let errorMessage = "Failed to update patient";
+        if (errorData.errors && Array.isArray(errorData.errors)) {
+          errorMessage = errorData.errors
+            .map((err) => `${err.path || err.param}: ${err.msg}`)
+            .join("\n");
+        } else if (errorData.error) {
+          errorMessage = errorData.error;
+        } else if (errorData.message) {
+          errorMessage = errorData.message;
+        }
+
+        throw new Error(errorMessage);
       }
 
-      const result = await response.json()
-      onSave(result.data)
-      onClose()
+      const result = await response.json();
+      console.log("Update successful:", result);
+      onSave(result.data);
+      onClose();
     } catch (error) {
-      console.error("Error updating patient:", error)
-      alert("Failed to update patient. Please try again.")
+      console.error("Error updating patient:", error);
+      alert(`Failed to update patient:\n\n${error.message}`);
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
-  if (!isOpen) return null
+  if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
@@ -531,9 +640,14 @@ const EditPatientModal: React.FC<{
         <div className="flex justify-between items-center p-6 border-b border-gray-200">
           <div className="flex items-center gap-3">
             <Edit className="w-5 h-5 text-blue-600" />
-            <h3 className="text-xl font-semibold text-gray-900">Edit Patient Details</h3>
+            <h3 className="text-xl font-semibold text-gray-900">
+              Edit Patient Details
+            </h3>
           </div>
-          <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+          <button
+            onClick={onClose}
+            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+          >
             <X className="w-6 h-6 text-gray-500" />
           </button>
         </div>
@@ -542,11 +656,15 @@ const EditPatientModal: React.FC<{
         <div className="p-6 space-y-6">
           {/* Child Information */}
           <div className="space-y-4">
-            <h4 className="text-lg font-semibold text-gray-900 border-b pb-2">Child Information</h4>
+            <h4 className="text-lg font-semibold text-gray-900 border-b pb-2">
+              Child Information
+            </h4>
             {/* Replace the existing gender field div with this expanded version: */}
             <div className="grid grid-cols-1  md:grid-cols-3 gap-4 items-start">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Gender *</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Gender *
+                </label>
                 <select
                   style={{ color: "black" }}
                   value={formData.gender}
@@ -567,7 +685,9 @@ const EditPatientModal: React.FC<{
                 </label>
                 <label
                   className={`flex items-center justify-center gap-2 px-4 py-2 rounded-lg cursor-pointer font-medium transition-colors ${
-                    uploadingPhoto ? "bg-gray-400 cursor-not-allowed" : "bg-pink-500 hover:bg-pink-600"
+                    uploadingPhoto
+                      ? "bg-gray-400 cursor-not-allowed"
+                      : "bg-pink-500 hover:bg-pink-600"
                   } text-white`}
                 >
                   {uploadingPhoto ? (
@@ -597,7 +717,9 @@ const EditPatientModal: React.FC<{
                       alt="Child"
                       className="w-16 h-16 object-cover rounded-lg border-2 border-green-200"
                     />
-                    <div className="text-xs text-green-600 mt-1">✓ Photo ready</div>
+                    <div className="text-xs text-green-600 mt-1">
+                      ✓ Photo ready
+                    </div>
                   </div>
                 )}
               </div>
@@ -608,7 +730,9 @@ const EditPatientModal: React.FC<{
                 </label>
                 <label
                   className={`flex items-center justify-center gap-2 px-4 py-2 rounded-lg cursor-pointer font-medium transition-colors ${
-                    uploadingBirthCert ? "bg-gray-400 cursor-not-allowed" : "bg-pink-500 hover:bg-pink-600"
+                    uploadingBirthCert
+                      ? "bg-gray-400 cursor-not-allowed"
+                      : "bg-pink-500 hover:bg-pink-600"
                   } text-white`}
                 >
                   {uploadingBirthCert ? (
@@ -638,11 +762,15 @@ const EditPatientModal: React.FC<{
                       alt="Birth Certificate"
                       className="w-16 h-16 object-cover rounded-lg border-2 border-green-200"
                     />
-                    <div className="text-xs text-green-600 mt-1">✓ Certificate ready</div>
+                    <div className="text-xs text-green-600 mt-1">
+                      ✓ Certificate ready
+                    </div>
                   </div>
                 )}
                 {birthCertificateUrl && !birthCertificatePreview && (
-                  <div className="mt-2 text-xs text-green-600">✓ PDF ready for upload</div>
+                  <div className="mt-2 text-xs text-green-600">
+                    ✓ PDF ready for upload
+                  </div>
                 )}
               </div>
             </div>
@@ -651,7 +779,9 @@ const EditPatientModal: React.FC<{
           {/* Current Documents Section */}
           {(patient.photo?.url || patient.birthCertificate?.url) && (
             <div className="space-y-4">
-              <h4 className="text-lg font-semibold text-gray-900 border-b pb-2">Current Documents</h4>
+              <h4 className="text-lg font-semibold text-gray-900 border-b pb-2">
+                Current Documents
+              </h4>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Current Patient Photo */}
                 {patient.photo?.url && (
@@ -670,7 +800,9 @@ const EditPatientModal: React.FC<{
                         <Eye className="w-3 h-3 text-gray-600" />
                       </div>
                     </div>
-                    <p className="text-xs text-gray-500">Upload a new photo above to replace this one</p>
+                    <p className="text-xs text-gray-500">
+                      Upload a new photo above to replace this one
+                    </p>
                   </div>
                 )}
                 {/* Current Birth Certificate */}
@@ -690,7 +822,9 @@ const EditPatientModal: React.FC<{
                         <Eye className="w-3 h-3 text-gray-600" />
                       </div>
                     </div>
-                    <p className="text-xs text-gray-500">Upload a new document above to replace this one</p>
+                    <p className="text-xs text-gray-500">
+                      Upload a new document above to replace this one
+                    </p>
                   </div>
                 )}
               </div>
@@ -699,68 +833,126 @@ const EditPatientModal: React.FC<{
 
           {/* Parent Information */}
           <div className="space-y-4">
-            <h4 className="text-lg font-semibold text-gray-900 border-b pb-2">Parent Information</h4>
+            <h4 className="text-lg font-semibold text-gray-900 border-b pb-2">
+              Parent Information
+            </h4>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Father's Name *</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Father's Name *
+                </label>
                 <input
                   style={{ color: "black" }}
                   type="text"
                   value={formData.parentInfo.name}
-                  onChange={(e) => handleInputChange("parentInfo.name", e.target.value)}
+                  onChange={(e) =>
+                    handleInputChange("parentInfo.name", e.target.value)
+                  }
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-pink-500"
                   required
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Father's Phone *</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Father's Phone *
+                </label>
                 <input
                   style={{ color: "black" }}
                   type="tel"
                   value={formData.parentInfo.phone}
-                  onChange={(e) => handleInputChange("parentInfo.phone", e.target.value)}
+                  onChange={(e) =>
+                    handleInputChange("parentInfo.phone", e.target.value)
+                  }
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-pink-500"
                   required
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Mother's Name *</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Mother's Name *
+                </label>
                 <input
                   style={{ color: "black" }}
                   type="text"
                   value={formData.parentInfo.motherName}
-                  onChange={(e) => handleInputChange("parentInfo.motherName", e.target.value)}
+                  onChange={(e) =>
+                    handleInputChange("parentInfo.motherName", e.target.value)
+                  }
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-pink-500"
                   required
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Mother's Phone *</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Mother's Phone *
+                </label>
                 <input
                   style={{ color: "black" }}
                   type="tel"
-                  value={formData.parentInfo.motherphone}
-                  onChange={(e) => handleInputChange("parentInfo.motherphone", e.target.value)}
+                  value={formData.parentInfo.motherPhone}
+                  onChange={(e) =>
+                    handleInputChange("parentInfo.motherPhone", e.target.value)
+                  }
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-pink-500"
                   required
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Email (Optional)</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  WhatsApp Contact (Optional)
+                </label>
+                <input
+                  style={{ color: "black" }}
+                  type="tel"
+                  value={formData.whatsappContact}
+                  onChange={(e) =>
+                    handleInputChange("whatsappContact", e.target.value)
+                  }
+                  placeholder="10-digit WhatsApp number"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-pink-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  WhatsApp Contact Type
+                </label>
+                <select
+                  style={{ color: "black" }}
+                  value={formData.whatsappContactType}
+                  onChange={(e) =>
+                    handleInputChange("whatsappContactType", e.target.value)
+                  }
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-pink-500"
+                  disabled={!formData.whatsappContact}
+                >
+                  <option value="mother">Mother</option>
+                  <option value="father">Father</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Email (Optional)
+                </label>
                 <input
                   style={{ color: "black" }}
                   type="email"
                   value={formData.parentInfo.email}
-                  onChange={(e) => handleInputChange("parentInfo.email", e.target.value)}
+                  onChange={(e) =>
+                    handleInputChange("parentInfo.email", e.target.value)
+                  }
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-pink-500"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Relationship</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Relationship
+                </label>
                 <select
                   style={{ color: "black" }}
                   value={formData.parentInfo.relationship}
-                  onChange={(e) => handleInputChange("parentInfo.relationship", e.target.value)}
+                  onChange={(e) =>
+                    handleInputChange("parentInfo.relationship", e.target.value)
+                  }
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-pink-500"
                 >
                   <option value="Father">Father</option>
@@ -774,24 +966,31 @@ const EditPatientModal: React.FC<{
 
           {/* Child Symptoms */}
           <div className="space-y-4">
-            <h4 className="text-lg font-semibold text-gray-900 border-b pb-2">Child Symptoms</h4>
+            <h4 className="text-lg font-semibold text-gray-900 border-b pb-2">
+              Child Symptoms
+            </h4>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Child Symptoms <span className="text-gray-500">(Optional)</span>
               </label>
               <SymptomsMultiSelect
                 selectedSymptoms={formData.childSymptoms}
-                onSymptomsChange={(symptoms) => handleInputChange("childSymptoms", symptoms)}
+                onSymptomsChange={(symptoms) =>
+                  handleInputChange("childSymptoms", symptoms)
+                }
               />
             </div>
           </div>
 
           {/* Notes */}
           <div className="space-y-4">
-            <h4 className="text-lg font-semibold text-gray-900 border-b pb-2">Notes</h4>
+            <h4 className="text-lg font-semibold text-gray-900 border-b pb-2">
+              Notes
+            </h4>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Additional Notes <span className="text-gray-500">(Optional)</span>
+                Additional Notes{" "}
+                <span className="text-gray-500">(Optional)</span>
               </label>
               <textarea
                 style={{ color: "black" }}
@@ -806,13 +1005,19 @@ const EditPatientModal: React.FC<{
 
           {/* Address */}
           <div className="space-y-4">
-            <h4 className="text-lg font-semibold text-gray-900 border-b pb-2">Address</h4>
+            <h4 className="text-lg font-semibold text-gray-900 border-b pb-2">
+              Address
+            </h4>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Address *</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Address *
+              </label>
               <textarea
                 style={{ color: "black" }}
                 value={formData.parentInfo.address}
-                onChange={(e) => handleInputChange("parentInfo.address", e.target.value)}
+                onChange={(e) =>
+                  handleInputChange("parentInfo.address", e.target.value)
+                }
                 rows={3}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-pink-500 resize-none"
                 placeholder="Enter full address..."
@@ -857,18 +1062,18 @@ const EditPatientModal: React.FC<{
         </div>
       </div>
     </div>
-  )
-}
+  );
+};
 
 // Image Modal Component
 const ImageModal: React.FC<{
-  isOpen: boolean
-  onClose: () => void
-  imageUrl: string
-  title: string
-  type: "photo" | "certificate"
+  isOpen: boolean;
+  onClose: () => void;
+  imageUrl: string;
+  title: string;
+  type: "photo" | "certificate";
 }> = ({ isOpen, onClose, imageUrl, title, type }) => {
-  if (!isOpen) return null
+  if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
@@ -883,7 +1088,10 @@ const ImageModal: React.FC<{
             )}
             <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
           </div>
-          <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+          <button
+            onClick={onClose}
+            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+          >
             <X className="w-5 h-5 text-gray-500" />
           </button>
         </div>
@@ -894,8 +1102,9 @@ const ImageModal: React.FC<{
             alt={title}
             className="max-w-full max-h-[70vh] object-contain rounded-lg shadow-lg"
             onError={(e) => {
-              const target = e.target as HTMLImageElement
-              target.src = "/placeholder.svg?height=400&width=400&text=Image+Not+Found"
+              const target = e.target as HTMLImageElement;
+              target.src =
+                "/placeholder.svg?height=400&width=400&text=Image+Not+Found";
             }}
           />
         </div>
@@ -910,52 +1119,59 @@ const ImageModal: React.FC<{
         </div>
       </div>
     </div>
-  )
-}
+  );
+};
 
 // Enhanced Patient Details Modal Component
 const PatientDetailsModal: React.FC<{
-  patient: PatientWithAppointments
-  isOpen: boolean
-  onClose: () => void
-  onEdit: (patient: PatientWithAppointments) => void
+  patient: PatientWithAppointments;
+  isOpen: boolean;
+  onClose: () => void;
+  onEdit: (patient: PatientWithAppointments) => void;
 }> = ({ patient, isOpen, onClose, onEdit }) => {
-  const [showImageModal, setShowImageModal] = useState(false)
+  const [showImageModal, setShowImageModal] = useState(false);
   const [selectedImage, setSelectedImage] = useState<{
-    url: string
-    title: string
+    url: string;
+    title: string;
+    type: "photo" | "certificate";
+  } | null>(null);
+
+  const openImageModal = (
+    url: string,
+    title: string,
     type: "photo" | "certificate"
-  } | null>(null)
+  ) => {
+    setSelectedImage({ url, title, type });
+    setShowImageModal(true);
+  };
 
-  const openImageModal = (url: string, title: string, type: "photo" | "certificate") => {
-    setSelectedImage({ url, title, type })
-    setShowImageModal(true)
-  }
-
-  if (!isOpen) return null
+  if (!isOpen) return null;
 
   const getPatientName = (patient: PatientWithAppointments): string => {
     if (patient.firstName && patient.lastName) {
-      return `${patient.firstName} ${patient.lastName}`
+      return `${patient.firstName} ${patient.lastName}`;
     }
-    return patient.fullName || patient.childName || "Unknown"
-  }
+    return patient.fullName || patient.childName || "Unknown";
+  };
 
   const getParentName = (patient: PatientWithAppointments): string => {
-    return patient.parentInfo?.name || patient.parentName || "N/A"
-  }
+    return patient.parentInfo?.name || patient.parentName || "N/A";
+  };
 
   const calculateAge = (dateOfBirth: string): string => {
-    if (!dateOfBirth) return "N/A"
-    const today = new Date()
-    const birthDate = new Date(dateOfBirth)
-    let age = today.getFullYear() - birthDate.getFullYear()
-    const monthDiff = today.getMonth() - birthDate.getMonth()
-    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
-      age--
+    if (!dateOfBirth) return "N/A";
+    const today = new Date();
+    const birthDate = new Date(dateOfBirth);
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const monthDiff = today.getMonth() - birthDate.getMonth();
+    if (
+      monthDiff < 0 ||
+      (monthDiff === 0 && today.getDate() < birthDate.getDate())
+    ) {
+      age--;
     }
-    return `${age} years`
-  }
+    return `${age} years`;
+  };
 
   return (
     <>
@@ -976,7 +1192,9 @@ const PatientDetailsModal: React.FC<{
                 </div>
               )}
               <div>
-                <h3 className="text-xl font-semibold text-gray-900">{getPatientName(patient)}</h3>
+                <h3 className="text-xl font-semibold text-gray-900">
+                  {getPatientName(patient)}
+                </h3>
                 <p className="text-sm text-gray-600">Patient Details</p>
               </div>
             </div>
@@ -988,7 +1206,10 @@ const PatientDetailsModal: React.FC<{
                 <Edit className="w-4 h-4" />
                 Edit Details
               </button>
-              <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+              <button
+                onClick={onClose}
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              >
                 <X className="w-6 h-6 text-gray-500" />
               </button>
             </div>
@@ -999,58 +1220,117 @@ const PatientDetailsModal: React.FC<{
             {/* Basic Information */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-4">
-                <h4 className="text-lg font-semibold text-gray-900 border-b pb-2">Basic Information</h4>
+                <h4 className="text-lg font-semibold text-gray-900 border-b pb-2">
+                  Basic Information
+                </h4>
                 <div className="space-y-3">
                   <div>
-                    <span className="text-sm font-medium text-gray-600">Full Name:</span>
+                    <span className="text-sm font-medium text-gray-600">
+                      Full Name:
+                    </span>
                     <p className="text-gray-900">{getPatientName(patient)}</p>
                   </div>
                   <div>
-                    <span className="text-sm font-medium text-gray-600">Date of Birth:</span>
+                    <span className="text-sm font-medium text-gray-600">
+                      Date of Birth:
+                    </span>
                     <p className="text-gray-900">
-                      {patient.dateOfBirth ? new Date(patient.dateOfBirth).toLocaleDateString() : "N/A"}
+                      {patient.dateOfBirth
+                        ? new Date(patient.dateOfBirth).toLocaleDateString()
+                        : "N/A"}
                     </p>
                   </div>
                   <div>
-                    <span className="text-sm font-medium text-gray-600">Age:</span>
-                    <p className="text-gray-900">{calculateAge(patient.dateOfBirth || "")}</p>
+                    <span className="text-sm font-medium text-gray-600">
+                      Age:
+                    </span>
+                    <p className="text-gray-900">
+                      {calculateAge(patient.dateOfBirth || "")}
+                    </p>
                   </div>
                   <div>
-                    <span className="text-sm font-medium text-gray-600">Gender:</span>
-                    <p className="text-gray-900 capitalize">{patient.gender || patient.childGender || "N/A"}</p>
+                    <span className="text-sm font-medium text-gray-600">
+                      Gender:
+                    </span>
+                    <p className="text-gray-900 capitalize">
+                      {patient.gender || patient.childGender || "N/A"}
+                    </p>
                   </div>
                 </div>
               </div>
               <div className="space-y-4">
-                <h4 className="text-lg font-semibold text-gray-900 border-b pb-2">Parent Information</h4>
+                <h4 className="text-lg font-semibold text-gray-900 border-b pb-2">
+                  Parent Information
+                </h4>
                 <div className="space-y-3">
                   <div>
-                    <span className="text-sm font-medium text-gray-600">Father's Name:</span>
+                    <span className="text-sm font-medium text-gray-600">
+                      Father's Name:
+                    </span>
                     <p className="text-gray-900">{getParentName(patient)}</p>
                   </div>
                   <div>
-                    <span className="text-sm font-medium text-gray-600">Father's Contact:</span>
-                    <p className="text-gray-900">{patient.parentInfo?.phone || patient.contactNumber || "N/A"}</p>
+                    <span className="text-sm font-medium text-gray-600">
+                      Father's Contact:
+                    </span>
+                    <p className="text-gray-900">
+                      {patient.parentInfo?.phone ||
+                        patient.contactNumber ||
+                        "N/A"}
+                    </p>
                   </div>
                   {patient.parentInfo?.motherName && (
                     <div>
-                      <span className="text-sm font-medium text-gray-600">Mother's Name:</span>
-                      <p className="text-gray-900">{patient.parentInfo.motherName}</p>
+                      <span className="text-sm font-medium text-gray-600">
+                        Mother's Name:
+                      </span>
+                      <p className="text-gray-900">
+                        {patient.parentInfo.motherName}
+                      </p>
                     </div>
                   )}
-                  {patient.parentInfo?.motherphone && (
+                  {(patient.parentInfo?.motherPhone ||
+                    patient.parentInfo?.motherphone) && (
                     <div>
-                      <span className="text-sm font-medium text-gray-600">Mother's Contact:</span>
-                      <p className="text-gray-900">{patient.parentInfo.motherphone}</p>
+                      <span className="text-sm font-medium text-gray-600">
+                        Mother's Contact:
+                      </span>
+                      <p className="text-gray-900">
+                        {patient.parentInfo.motherPhone ||
+                          patient.parentInfo.motherphone}
+                      </p>
+                    </div>
+                  )}
+                  {patient.whatsappContact && (
+                    <div>
+                      <span className="text-sm font-medium text-gray-600">
+                        WhatsApp Contact:
+                      </span>
+                      <p className="text-gray-900">
+                        {patient.whatsappContact}
+                        <span className="ml-2 px-2 py-0.5 bg-green-100 text-green-800 text-xs rounded-full">
+                          {patient.whatsappContactType === "father"
+                            ? "Father"
+                            : "Mother"}
+                        </span>
+                      </p>
                     </div>
                   )}
                   <div>
-                    <span className="text-sm font-medium text-gray-600">Email:</span>
-                    <p className="text-gray-900">{patient.parentInfo?.email || patient.email || "N/A"}</p>
+                    <span className="text-sm font-medium text-gray-600">
+                      Email:
+                    </span>
+                    <p className="text-gray-900">
+                      {patient.parentInfo?.email || patient.email || "N/A"}
+                    </p>
                   </div>
                   <div>
-                    <span className="text-sm font-medium text-gray-600">Address:</span>
-                    <p className="text-gray-900">{patient.parentInfo?.address || "N/A"}</p>
+                    <span className="text-sm font-medium text-gray-600">
+                      Address:
+                    </span>
+                    <p className="text-gray-900">
+                      {patient.parentInfo?.address || "N/A"}
+                    </p>
                   </div>
                 </div>
               </div>
@@ -1059,7 +1339,9 @@ const PatientDetailsModal: React.FC<{
             {/* NEW SECTION - Child Symptoms */}
             {patient.childSymptoms && patient.childSymptoms.length > 0 && (
               <div className="space-y-4">
-                <h4 className="text-lg font-semibold text-gray-900 border-b pb-2">Child Symptoms</h4>
+                <h4 className="text-lg font-semibold text-gray-900 border-b pb-2">
+                  Child Symptoms
+                </h4>
                 <div className="flex flex-wrap gap-2">
                   {patient.childSymptoms.map((symptom, index) => (
                     <span
@@ -1076,9 +1358,13 @@ const PatientDetailsModal: React.FC<{
             {/* NEW SECTION - Notes */}
             {patient.notes && (
               <div className="space-y-4">
-                <h4 className="text-lg font-semibold text-gray-900 border-b pb-2">Notes</h4>
+                <h4 className="text-lg font-semibold text-gray-900 border-b pb-2">
+                  Notes
+                </h4>
                 <div className="bg-gray-50 rounded-lg p-4">
-                  <p className="text-gray-900 whitespace-pre-wrap">{patient.notes}</p>
+                  <p className="text-gray-900 whitespace-pre-wrap">
+                    {patient.notes}
+                  </p>
                 </div>
               </div>
             )}
@@ -1086,7 +1372,9 @@ const PatientDetailsModal: React.FC<{
             {/* Documents Section */}
             {(patient.photo?.url || patient.birthCertificate?.url) && (
               <div className="space-y-4">
-                <h4 className="text-lg font-semibold text-gray-900 border-b pb-2">Documents & Photos</h4>
+                <h4 className="text-lg font-semibold text-gray-900 border-b pb-2">
+                  Documents & Photos
+                </h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {/* Patient Photo */}
                   {patient?.photo?.url && (
@@ -1100,7 +1388,9 @@ const PatientDetailsModal: React.FC<{
                           src={patient.photo.url || "/placeholder.svg"}
                           alt="Patient Photo"
                           className="w-full h-48 object-cover rounded-lg border-2 border-gray-200 cursor-pointer hover:border-blue-300 transition-colors"
-                          onClick={() => window.open(patient.photo!.url, "_blank")}
+                          onClick={() =>
+                            window.open(patient.photo!.url, "_blank")
+                          }
                         />
                         <div className="absolute bottom-2 right-2 bg-white/90 rounded-full p-1">
                           <Eye className="w-4 h-4 text-gray-600" />
@@ -1117,10 +1407,14 @@ const PatientDetailsModal: React.FC<{
                       </h5>
                       <div className="relative group">
                         <img
-                          src={patient.birthCertificate.url || "/placeholder.svg"}
+                          src={
+                            patient.birthCertificate.url || "/placeholder.svg"
+                          }
                           alt="Birth Certificate"
                           className="w-full h-48 object-cover rounded-lg border-2 border-gray-200 cursor-pointer hover:border-green-300 transition-colors"
-                          onClick={() => window.open(patient.birthCertificate!.url, "_blank")}
+                          onClick={() =>
+                            window.open(patient.birthCertificate!.url, "_blank")
+                          }
                         />
                         <div className="absolute bottom-2 right-2 bg-white/90 rounded-full p-1">
                           <Eye className="w-4 h-4 text-gray-600" />
@@ -1134,23 +1428,39 @@ const PatientDetailsModal: React.FC<{
 
             {/* Appointment Summary */}
             <div className="space-y-4">
-              <h4 className="text-lg font-semibold text-gray-900 border-b pb-2">Appointment Summary</h4>
+              <h4 className="text-lg font-semibold text-gray-900 border-b pb-2">
+                Appointment Summary
+              </h4>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div className="bg-blue-50 rounded-lg p-4 text-center">
-                  <div className="text-2xl font-bold text-blue-600">{patient.totalAppointments}</div>
-                  <div className="text-sm text-blue-700">Total Appointments</div>
+                  <div className="text-2xl font-bold text-blue-600">
+                    {patient.totalAppointments}
+                  </div>
+                  <div className="text-sm text-blue-700">
+                    Total Appointments
+                  </div>
                 </div>
                 <div className="bg-green-50 rounded-lg p-4 text-center">
-                  <div className="text-2xl font-bold text-green-600">{patient.completedAppointments}</div>
+                  <div className="text-2xl font-bold text-green-600">
+                    {patient.completedAppointments}
+                  </div>
                   <div className="text-sm text-green-700">Completed</div>
                 </div>
                 <div className="bg-yellow-50 rounded-lg p-4 text-center">
-                  <div className="text-2xl font-bold text-yellow-600">{patient.pendingPayments}</div>
-                  <div className="text-sm text-yellow-700">Pending Payments</div>
+                  <div className="text-2xl font-bold text-yellow-600">
+                    {patient.pendingPayments}
+                  </div>
+                  <div className="text-sm text-yellow-700">
+                    Pending Payments
+                  </div>
                 </div>
                 <div className="bg-red-50 rounded-lg p-4 text-center">
-                  <div className="text-2xl font-bold text-red-600">₹{patient.totalOwed}</div>
-                  <div className="text-sm text-red-700">Payment to be received</div>
+                  <div className="text-2xl font-bold text-red-600">
+                    ₹{patient.totalOwed}
+                  </div>
+                  <div className="text-sm text-red-700">
+                    Payment to be received
+                  </div>
                 </div>
               </div>
             </div>
@@ -1173,8 +1483,8 @@ const PatientDetailsModal: React.FC<{
         <ImageModal
           isOpen={showImageModal}
           onClose={() => {
-            setShowImageModal(false)
-            setSelectedImage(null)
+            setShowImageModal(false);
+            setSelectedImage(null);
           }}
           imageUrl={selectedImage.url}
           title={selectedImage.title}
@@ -1182,79 +1492,88 @@ const PatientDetailsModal: React.FC<{
         />
       )}
     </>
-  )
-}
+  );
+};
 
 const PatientsEnhancedPage: React.FC = () => {
-  const [patients, setPatients] = useState<PatientWithAppointments[]>([])
-  const [loading, setLoading] = useState<boolean>(true)
-  const [error, setError] = useState<string | null>(null)
-  const [searchTerm, setSearchTerm] = useState<string>("")
-  const [filterStatus, setFilterStatus] = useState<string>("all")
+  const [patients, setPatients] = useState<PatientWithAppointments[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState<string>("");
+  const [filterStatus, setFilterStatus] = useState<string>("all");
   const [paymentSummary, setPaymentSummary] = useState<PaymentSummary>({
     totalPatients: 0,
     totalRevenue: 0,
     pendingPayments: 0,
     completedPayments: 0,
     partialPayments: 0,
-  })
+  });
 
   // Modal states
-  const [showPaymentModal, setShowPaymentModal] = useState(false)
-  const [showAppointmentsModal, setShowAppointmentsModal] = useState(false)
-  const [showPatientDetailsModal, setShowPatientDetailsModal] = useState(false)
-  const [showEditPatientModal, setShowEditPatientModal] = useState(false)
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [showAppointmentsModal, setShowAppointmentsModal] = useState(false);
+  const [showPatientDetailsModal, setShowPatientDetailsModal] = useState(false);
+  const [showEditPatientModal, setShowEditPatientModal] = useState(false);
   // NEW STATE - Delete modal
-  const [showDeleteModal, setShowDeleteModal] = useState(false)
-  const [isDeleting, setIsDeleting] = useState(false)
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
-  const [selectedPatient, setSelectedPatient] = useState<PatientWithAppointments | null>(null)
-  const [paymentModalData, setPaymentModalData] = useState<PaymentModalData | null>(null)
-  const [isProcessingPayment, setIsProcessingPayment] = useState(false)
+  const [selectedPatient, setSelectedPatient] =
+    useState<PatientWithAppointments | null>(null);
+  const [paymentModalData, setPaymentModalData] =
+    useState<PaymentModalData | null>(null);
+  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
 
   // Fetch patients with appointments data - FIXED API ENDPOINT
   const fetchPatientsWithAppointments = async () => {
     try {
-      setLoading(true)
-      setError(null)
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/appointments/with-appointments`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("receptionToken")}`,
-        },
-      })
+      setLoading(true);
+      setError(null);
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/appointments/with-appointments`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("receptionToken")}`,
+          },
+        }
+      );
 
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`)
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      const apiResponse = await response.json()
+      const apiResponse = await response.json();
 
       if (!apiResponse.success) {
-        throw new Error("API returned unsuccessful response")
+        throw new Error("API returned unsuccessful response");
       }
 
-      setPatients(apiResponse.data)
-      calculatePaymentSummary(apiResponse.data)
+      setPatients(apiResponse.data);
+      calculatePaymentSummary(apiResponse.data);
     } catch (err) {
-      console.error("Error fetching patients:", err)
-      setError(err instanceof Error ? err.message : "Failed to fetch patients")
+      console.error("Error fetching patients:", err);
+      setError(err instanceof Error ? err.message : "Failed to fetch patients");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   // Calculate payment summary
   const calculatePaymentSummary = (patientsData: PatientWithAppointments[]) => {
     const summary = patientsData.reduce(
       (acc, patient) => {
-        acc.totalPatients += 1
-        acc.totalRevenue += patient.totalPaid
-        acc.pendingPayments += patient.pendingPayments
-        acc.completedPayments += patient.appointments.filter((apt) => apt.payment.status === "paid").length
-        acc.partialPayments += patient.appointments.filter((apt) => apt.payment.status === "partial").length
-        return acc
+        acc.totalPatients += 1;
+        acc.totalRevenue += patient.totalPaid;
+        acc.pendingPayments += patient.pendingPayments;
+        acc.completedPayments += patient.appointments.filter(
+          (apt) => apt.payment.status === "paid"
+        ).length;
+        acc.partialPayments += patient.appointments.filter(
+          (apt) => apt.payment.status === "partial"
+        ).length;
+        return acc;
       },
       {
         totalPatients: 0,
@@ -1262,160 +1581,183 @@ const PatientsEnhancedPage: React.FC = () => {
         pendingPayments: 0,
         completedPayments: 0,
         partialPayments: 0,
-      },
-    )
+      }
+    );
 
-    setPaymentSummary(summary)
-  }
+    setPaymentSummary(summary);
+  };
 
   // Get patient display name
   const getPatientName = (patient: PatientWithAppointments): string => {
     if (patient.firstName && patient.lastName) {
-      return `${patient.firstName} ${patient.lastName}`
+      return `${patient.firstName} ${patient.lastName}`;
     }
-    return patient.fullName || patient.childName || "Unknown"
-  }
+    return patient.fullName || patient.childName || "Unknown";
+  };
 
   // Get parent name
   const getParentName = (patient: PatientWithAppointments): string => {
-    return patient.parentInfo?.name || patient.parentName || "N/A"
-  }
+    return patient.parentInfo?.name || patient.parentName || "N/A";
+  };
 
   // Get contact info
   const getContactInfo = (patient: PatientWithAppointments): string => {
-    return patient.parentInfo?.phone || patient.contactNumber || "N/A"
-  }
+    return patient.parentInfo?.phone || patient.contactNumber || "N/A";
+  };
 
   // Open patient details modal
   const openPatientDetailsModal = (patient: PatientWithAppointments) => {
-    setSelectedPatient(patient)
-    setShowPatientDetailsModal(true)
-  }
+    setSelectedPatient(patient);
+    setShowPatientDetailsModal(true);
+  };
 
   // Open edit patient modal
   const openEditPatientModal = (patient: PatientWithAppointments) => {
-    setSelectedPatient(patient)
-    setShowEditPatientModal(true)
-    setShowPatientDetailsModal(false) // Close details modal if open
-  }
+    setSelectedPatient(patient);
+    setShowEditPatientModal(true);
+    setShowPatientDetailsModal(false); // Close details modal if open
+  };
 
   // NEW FUNCTION - Open delete confirmation modal
   const openDeleteModal = (patient: PatientWithAppointments) => {
-    setSelectedPatient(patient)
-    setShowDeleteModal(true)
-  }
+    setSelectedPatient(patient);
+    setShowDeleteModal(true);
+  };
 
   // NEW FUNCTION - Handle patient deletion
   const handleDeletePatient = async () => {
-    if (!selectedPatient) return
+    if (!selectedPatient) return;
 
-    setIsDeleting(true)
+    setIsDeleting(true);
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/patients/${selectedPatient._id}`, {
-        method: "DELETE",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("receptionToken")}`,
-        },
-      })
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/patients/${selectedPatient._id}`,
+        {
+          method: "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("receptionToken")}`,
+          },
+        }
+      );
 
       if (!response.ok) {
-        throw new Error("Failed to delete patient")
+        throw new Error("Failed to delete patient");
       }
 
-      const result = await response.json()
+      const result = await response.json();
       if (result.success) {
         // Remove patient from local state
-        setPatients((prevPatients) => prevPatients.filter((patient) => patient._id !== selectedPatient._id))
+        setPatients((prevPatients) =>
+          prevPatients.filter((patient) => patient._id !== selectedPatient._id)
+        );
         // Recalculate payment summary
-        const updatedPatients = patients.filter((patient) => patient._id !== selectedPatient._id)
-        calculatePaymentSummary(updatedPatients)
+        const updatedPatients = patients.filter(
+          (patient) => patient._id !== selectedPatient._id
+        );
+        calculatePaymentSummary(updatedPatients);
         // Show success message
-        alert(`Patient ${getPatientName(selectedPatient)} has been successfully deleted.`)
+        alert(
+          `Patient ${getPatientName(
+            selectedPatient
+          )} has been successfully deleted.`
+        );
         // Close modal and reset state
-        setShowDeleteModal(false)
-        setSelectedPatient(null)
+        setShowDeleteModal(false);
+        setSelectedPatient(null);
       } else {
-        throw new Error(result.error || "Failed to delete patient")
+        throw new Error(result.error || "Failed to delete patient");
       }
     } catch (error) {
-      console.error("Error deleting patient:", error)
-      alert("Failed to delete patient. Please try again.")
+      console.error("Error deleting patient:", error);
+      alert("Failed to delete patient. Please try again.");
     } finally {
-      setIsDeleting(false)
+      setIsDeleting(false);
     }
-  }
+  };
 
   // Handle patient update
-  const handlePatientUpdate = (updatedPatient: Partial<PatientWithAppointments>) => {
+  const handlePatientUpdate = (
+    updatedPatient: Partial<PatientWithAppointments>
+  ) => {
     setPatients((prevPatients) =>
-      prevPatients.map((patient) => (patient._id === updatedPatient._id ? { ...patient, ...updatedPatient } : patient)),
-    )
+      prevPatients.map((patient) =>
+        patient._id === updatedPatient._id
+          ? { ...patient, ...updatedPatient }
+          : patient
+      )
+    );
     // Refresh the data to get the latest information
-    fetchPatientsWithAppointments()
-  }
+    fetchPatientsWithAppointments();
+  };
 
   // Open payment modal
-  const openPaymentModal = (patient: PatientWithAppointments, type: "single" | "partial" | "full" = "single") => {
-    setSelectedPatient(patient)
+  const openPaymentModal = (
+    patient: PatientWithAppointments,
+    type: "single" | "partial" | "full" = "single"
+  ) => {
+    setSelectedPatient(patient);
     setPaymentModalData({
       patient,
       selectedAppointments: [],
       paymentType: type,
-    })
-    setShowPaymentModal(true)
-  }
+    });
+    setShowPaymentModal(true);
+  };
 
   // Open appointments detail modal
   const openAppointmentsModal = (patient: PatientWithAppointments) => {
-    setSelectedPatient(patient)
-    setShowAppointmentsModal(true)
-  }
+    setSelectedPatient(patient);
+    setShowAppointmentsModal(true);
+  };
 
   // Process payment - FIXED API ENDPOINT
   const processPayment = async (paymentData: {
-    appointmentIds: string[]
-    paymentAmount: number
-    paymentMethod: string
-    paymentType: "full" | "partial"
+    appointmentIds: string[];
+    paymentAmount: number;
+    paymentMethod: string;
+    paymentType: "full" | "partial";
   }) => {
-    if (!selectedPatient) return
+    if (!selectedPatient) return;
 
-    setIsProcessingPayment(true)
+    setIsProcessingPayment(true);
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/appointments/process-payment`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("receptionToken")}`,
-        },
-        body: JSON.stringify({
-          patientId: selectedPatient._id,
-          appointmentIds: paymentData.appointmentIds,
-          paymentAmount: paymentData.paymentAmount,
-          paymentMethod: paymentData.paymentMethod,
-          paymentType: paymentData.paymentType,
-        }),
-      })
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/appointments/process-payment`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("receptionToken")}`,
+          },
+          body: JSON.stringify({
+            patientId: selectedPatient._id,
+            appointmentIds: paymentData.appointmentIds,
+            paymentAmount: paymentData.paymentAmount,
+            paymentMethod: paymentData.paymentMethod,
+            paymentType: paymentData.paymentType,
+          }),
+        }
+      );
 
       if (!response.ok) {
-        throw new Error("Failed to process payment")
+        throw new Error("Failed to process payment");
       }
 
-      const result = await response.json()
+      const result = await response.json();
       // Refresh data
-      await fetchPatientsWithAppointments()
+      await fetchPatientsWithAppointments();
       // Show success message
-      alert(`Payment of ₹${paymentData.paymentAmount} processed successfully!`)
-      setShowPaymentModal(false)
-      setPaymentModalData(null)
+      alert(`Payment of ₹${paymentData.paymentAmount} processed successfully!`);
+      setShowPaymentModal(false);
+      setPaymentModalData(null);
     } catch (error) {
-      console.error("Error processing payment:", error)
-      alert("Failed to process payment. Please try again.")
+      console.error("Error processing payment:", error);
+      alert("Failed to process payment. Please try again.");
     } finally {
-      setIsProcessingPayment(false)
+      setIsProcessingPayment(false);
     }
-  }
+  };
 
   // Export patient payment report
   const exportPaymentReport = () => {
@@ -1448,56 +1790,68 @@ const PatientsEnhancedPage: React.FC = () => {
       ]),
     ]
       .map((row) => row.join(","))
-      .join("\n")
+      .join("\n");
 
-    const blob = new Blob([csvContent], { type: "text/csv" })
-    const url = window.URL.createObjectURL(blob)
-    const a = document.createElement("a")
-    a.href = url
-    a.download = `patient-payment-report-${new Date().toISOString().split("T")[0]}.csv`
-    a.click()
-    window.URL.revokeObjectURL(url)
-  }
+    const blob = new Blob([csvContent], { type: "text/csv" });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `patient-payment-report-${
+      new Date().toISOString().split("T")[0]
+    }.csv`;
+    a.click();
+    window.URL.revokeObjectURL(url);
+  };
 
   // Filter patients
   const filteredPatients = patients.filter((patient) => {
     const matchesSearch =
-      getPatientName(patient).toLowerCase().includes(searchTerm.toLowerCase()) ||
+      getPatientName(patient)
+        .toLowerCase()
+        .includes(searchTerm.toLowerCase()) ||
       getParentName(patient).toLowerCase().includes(searchTerm.toLowerCase()) ||
       getContactInfo(patient).includes(searchTerm) ||
       (patient.childSymptoms &&
-        patient.childSymptoms.some((symptom) => symptom.toLowerCase().includes(searchTerm.toLowerCase()))) ||
-      (patient.notes && patient.notes.toLowerCase().includes(searchTerm.toLowerCase()))
+        patient.childSymptoms.some((symptom) =>
+          symptom.toLowerCase().includes(searchTerm.toLowerCase())
+        )) ||
+      (patient.notes &&
+        patient.notes.toLowerCase().includes(searchTerm.toLowerCase()));
 
     const matchesFilter =
       filterStatus === "all" ||
       (filterStatus === "pending" && patient.pendingPayments > 0) ||
       (filterStatus === "paid" && patient.pendingPayments === 0) ||
-      (filterStatus === "partial" && patient.appointments.some((apt) => apt.payment.status === "partial"))
+      (filterStatus === "partial" &&
+        patient.appointments.some((apt) => apt.payment.status === "partial"));
 
-    return matchesSearch && matchesFilter
-  })
+    return matchesSearch && matchesFilter;
+  });
 
   useEffect(() => {
-    fetchPatientsWithAppointments()
-  }, [])
+    fetchPatientsWithAppointments();
+  }, []);
 
   if (loading) {
     return (
       <div className="p-6 max-w-[84%] mt-15 ml-[150px] mx-auto flex items-center justify-center min-h-[400px]">
         <div className="flex items-center gap-3">
           <Loader2 className="w-6 h-6 animate-spin text-[#C83C92]" />
-          <span className="text-[#1E437A]">Loading patient payment data...</span>
+          <span className="text-[#1E437A]">
+            Loading patient payment data...
+          </span>
         </div>
       </div>
-    )
+    );
   }
 
   if (error) {
     return (
       <div className="p-6 font-sans max-w-[84%] mt-15 ml-[170px] mx-auto">
         <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-          <h2 className="text-red-800 font-semibold mb-2">Error Loading Patient Data</h2>
+          <h2 className="text-red-800 font-semibold mb-2">
+            Error Loading Patient Data
+          </h2>
           <p className="text-red-600">{error}</p>
           <button
             onClick={fetchPatientsWithAppointments}
@@ -1507,15 +1861,19 @@ const PatientsEnhancedPage: React.FC = () => {
           </button>
         </div>
       </div>
-    )
+    );
   }
 
   return (
     <div className="p-6 max-w-[84%] font-sans mt-15 ml-[170px] mx-auto overflow-y-auto hide-scrollbar">
       {/* Header */}
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-[#1E437A] mb-2">Patient Payment Management</h1>
-        <p className="text-gray-600">Manage patient appointments and payment status</p>
+        <h1 className="text-2xl font-bold text-[#1E437A] mb-2">
+          Patient Payment Management
+        </h1>
+        <p className="text-gray-600">
+          Manage patient appointments and payment status
+        </p>
       </div>
 
       {/* Payment Summary Cards */}
@@ -1527,7 +1885,9 @@ const PatientsEnhancedPage: React.FC = () => {
             </div>
             <div>
               <p className="text-sm text-black text-gray-600">Total Patients</p>
-              <p className="text-xl font-bold text-[#1E437A]">{paymentSummary.totalPatients}</p>
+              <p className="text-xl font-bold text-[#1E437A]">
+                {paymentSummary.totalPatients}
+              </p>
             </div>
           </div>
         </div>
@@ -1538,7 +1898,9 @@ const PatientsEnhancedPage: React.FC = () => {
             </div>
             <div>
               <p className="text-sm text-black text-gray-600">Total Revenue</p>
-              <p className="text-xl font-bold text-green-600">₹{paymentSummary.totalRevenue}</p>
+              <p className="text-xl font-bold text-green-600">
+                ₹{paymentSummary.totalRevenue}
+              </p>
             </div>
           </div>
         </div>
@@ -1548,8 +1910,12 @@ const PatientsEnhancedPage: React.FC = () => {
               <Clock className="w-5 h-5 text-yellow-600" />
             </div>
             <div>
-              <p className="text-sm text-black text-gray-600">Pending Payments</p>
-              <p className="text-xl font-bold text-yellow-600">{paymentSummary.pendingPayments}</p>
+              <p className="text-sm text-black text-gray-600">
+                Pending Payments
+              </p>
+              <p className="text-xl font-bold text-yellow-600">
+                {paymentSummary.pendingPayments}
+              </p>
             </div>
           </div>
         </div>
@@ -1560,7 +1926,9 @@ const PatientsEnhancedPage: React.FC = () => {
             </div>
             <div>
               <p className="text-sm text-black text-gray-600">Completed</p>
-              <p className="text-xl font-bold text-green-600">{paymentSummary.completedPayments}</p>
+              <p className="text-xl font-bold text-green-600">
+                {paymentSummary.completedPayments}
+              </p>
             </div>
           </div>
         </div>
@@ -1570,8 +1938,12 @@ const PatientsEnhancedPage: React.FC = () => {
               <AlertCircle className="w-5 h-5 text-orange-600" />
             </div>
             <div>
-              <p className="text-sm text-black text-gray-600">Partial Payments</p>
-              <p className="text-xl font-bold text-orange-600">{paymentSummary.partialPayments}</p>
+              <p className="text-sm text-black text-gray-600">
+                Partial Payments
+              </p>
+              <p className="text-xl font-bold text-orange-600">
+                {paymentSummary.partialPayments}
+              </p>
             </div>
           </div>
         </div>
@@ -1622,22 +1994,33 @@ const PatientsEnhancedPage: React.FC = () => {
       {/* Patients Table */}
       <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
         <div className="p-6 border-b border-gray-200">
-          <h2 className="text-xl font-semibold text-[#1E437A]">Patient Payment Overview ({filteredPatients.length})</h2>
+          <h2 className="text-xl font-semibold text-[#1E437A]">
+            Patient Payment Overview ({filteredPatients.length})
+          </h2>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead className="bg-[#F9F9FC]">
               <tr className="text-left text-[#1E437A]">
-                <th className="px-6 py-4 font-medium text-gray-800">Patient Info</th>
-                <th className="px-6 py-4 font-medium text-gray-800">Appointments</th>
-                <th className="px-6 py-4 font-medium text-gray-800">Payment Summary</th>
+                <th className="px-6 py-4 font-medium text-gray-800">
+                  Patient Info
+                </th>
+                <th className="px-6 py-4 font-medium text-gray-800">
+                  Appointments
+                </th>
+                <th className="px-6 py-4 font-medium text-gray-800">
+                  Payment Summary
+                </th>
                 <th className="px-6 py-4 font-medium text-gray-800">Status</th>
                 <th className="px-6 py-4 font-medium text-gray-800">Actions</th>
               </tr>
             </thead>
             <tbody>
               {filteredPatients.map((patient) => (
-                <tr key={patient._id} className="border-b hover:bg-gray-50 transition-colors">
+                <tr
+                  key={patient._id}
+                  className="border-b hover:bg-gray-50 transition-colors"
+                >
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
                       {/* Patient Photo */}
@@ -1663,8 +2046,12 @@ const PatientsEnhancedPage: React.FC = () => {
                         >
                           {getPatientName(patient)}
                         </div>
-                        <div className="text-sm text-black text-gray-500">Parent: {getParentName(patient)}</div>
-                        <div className="text-sm text-black text-gray-500">Contact: {getContactInfo(patient)}</div>
+                        <div className="text-sm text-black text-gray-500">
+                          Parent: {getParentName(patient)}
+                        </div>
+                        <div className="text-sm text-black text-gray-500">
+                          Contact: {getContactInfo(patient)}
+                        </div>
                         {/* Document indicators */}
                         <div className="flex items-center gap-2 mt-1">
                           {patient.photo?.url && (
@@ -1679,11 +2066,13 @@ const PatientsEnhancedPage: React.FC = () => {
                               Certificate
                             </span>
                           )}
-                          {patient.childSymptoms && patient.childSymptoms.length > 0 && (
-                            <span className="inline-flex items-center gap-1 text-xs text-purple-600 bg-purple-50 px-2 py-0.5 rounded">
-                              {patient.childSymptoms.length} Symptom{patient.childSymptoms.length > 1 ? "s" : ""}
-                            </span>
-                          )}
+                          {patient.childSymptoms &&
+                            patient.childSymptoms.length > 0 && (
+                              <span className="inline-flex items-center gap-1 text-xs text-purple-600 bg-purple-50 px-2 py-0.5 rounded">
+                                {patient.childSymptoms.length} Symptom
+                                {patient.childSymptoms.length > 1 ? "s" : ""}
+                              </span>
+                            )}
                           {patient.notes && (
                             <span className="inline-flex items-center gap-1 text-xs text-orange-600 bg-orange-50 px-2 py-0.5 rounded">
                               Notes
@@ -1696,10 +2085,16 @@ const PatientsEnhancedPage: React.FC = () => {
                   <td className="px-6 py-4">
                     <div className="space-y-1">
                       <div className="text-sm text-black">
-                        <span className="font-medium text-gray-800">Total:</span> {patient.totalAppointments}
+                        <span className="font-medium text-gray-800">
+                          Total:
+                        </span>{" "}
+                        {patient.totalAppointments}
                       </div>
                       <div className="text-sm text-black">
-                        <span className="font-medium text-gray-800">Completed:</span> {patient.completedAppointments}
+                        <span className="font-medium text-gray-800">
+                          Completed:
+                        </span>{" "}
+                        {patient.completedAppointments}
                       </div>
                       <button
                         onClick={() => openAppointmentsModal(patient)}
@@ -1713,16 +2108,23 @@ const PatientsEnhancedPage: React.FC = () => {
                   <td className="px-6 py-4">
                     <div className="space-y-1">
                       <div className="text-sm text-black">
-                        <span className="font-medium text-gray-800">Amount Due:</span>{" "}
-                        <span className="text-red-600">₹{patient.totalOwed}</span>
+                        <span className="font-medium text-gray-800">
+                          Amount Due:
+                        </span>{" "}
+                        <span className="text-red-600">
+                          ₹{patient.totalOwed}
+                        </span>
                       </div>
                       <div className="text-sm text-black">
                         <span className="font-medium text-gray-800">Paid:</span>{" "}
-                        <span className="text-green-600">₹{patient.totalPaid}</span>
+                        <span className="text-green-600">
+                          ₹{patient.totalPaid}
+                        </span>
                       </div>
                       {patient.pendingPayments > 0 && (
                         <div className="text-xs text-orange-600">
-                          {patient.pendingPayments} pending payment{patient.pendingPayments > 1 ? "s" : ""}
+                          {patient.pendingPayments} pending payment
+                          {patient.pendingPayments > 1 ? "s" : ""}
                         </div>
                       )}
                     </div>
@@ -1766,22 +2168,25 @@ const PatientsEnhancedPage: React.FC = () => {
                       >
                         Delete
                       </button>
-                      {patient.totalAppointments > 0 && patient.pendingPayments > 0 && (
-                        <>
-                          <button
-                            onClick={() => openPaymentModal(patient, "single")}
-                            className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded hover:bg-blue-200 transition-colors"
-                          >
-                            Pay Single
-                          </button>
-                          <button
-                            onClick={() => openPaymentModal(patient, "full")}
-                            className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded hover:bg-green-200 transition-colors"
-                          >
-                            Pay All
-                          </button>
-                        </>
-                      )}
+                      {patient.totalAppointments > 0 &&
+                        patient.pendingPayments > 0 && (
+                          <>
+                            <button
+                              onClick={() =>
+                                openPaymentModal(patient, "single")
+                              }
+                              className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded hover:bg-blue-200 transition-colors"
+                            >
+                              Pay Single
+                            </button>
+                            <button
+                              onClick={() => openPaymentModal(patient, "full")}
+                              className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded hover:bg-green-200 transition-colors"
+                            >
+                              Pay All
+                            </button>
+                          </>
+                        )}
                     </div>
                   </td>
                 </tr>
@@ -1791,7 +2196,9 @@ const PatientsEnhancedPage: React.FC = () => {
         </div>
         {filteredPatients.length === 0 && (
           <div className="text-center py-8 text-gray-500">
-            {searchTerm || filterStatus !== "all" ? "No patients found matching your criteria." : "No patients found."}
+            {searchTerm || filterStatus !== "all"
+              ? "No patients found matching your criteria."
+              : "No patients found."}
           </div>
         )}
       </div>
@@ -1802,8 +2209,8 @@ const PatientsEnhancedPage: React.FC = () => {
           patient={selectedPatient}
           isOpen={showPatientDetailsModal}
           onClose={() => {
-            setShowPatientDetailsModal(false)
-            setSelectedPatient(null)
+            setShowPatientDetailsModal(false);
+            setSelectedPatient(null);
           }}
           onEdit={openEditPatientModal}
         />
@@ -1815,8 +2222,8 @@ const PatientsEnhancedPage: React.FC = () => {
           patient={selectedPatient}
           isOpen={showEditPatientModal}
           onClose={() => {
-            setShowEditPatientModal(false)
-            setSelectedPatient(null)
+            setShowEditPatientModal(false);
+            setSelectedPatient(null);
           }}
           onSave={handlePatientUpdate}
         />
@@ -1828,8 +2235,8 @@ const PatientsEnhancedPage: React.FC = () => {
           patient={selectedPatient}
           isOpen={showDeleteModal}
           onClose={() => {
-            setShowDeleteModal(false)
-            setSelectedPatient(null)
+            setShowDeleteModal(false);
+            setSelectedPatient(null);
           }}
           onConfirm={handleDeletePatient}
           isDeleting={isDeleting}
@@ -1842,8 +2249,8 @@ const PatientsEnhancedPage: React.FC = () => {
           data={paymentModalData}
           isOpen={showPaymentModal}
           onClose={() => {
-            setShowPaymentModal(false)
-            setPaymentModalData(null)
+            setShowPaymentModal(false);
+            setPaymentModalData(null);
           }}
           onProcessPayment={processPayment}
           isProcessing={isProcessingPayment}
@@ -1856,89 +2263,97 @@ const PatientsEnhancedPage: React.FC = () => {
           patient={selectedPatient}
           isOpen={showAppointmentsModal}
           onClose={() => {
-            setShowAppointmentsModal(false)
-            setSelectedPatient(null)
+            setShowAppointmentsModal(false);
+            setSelectedPatient(null);
           }}
         />
       )}
     </div>
-  )
-}
+  );
+};
 
 // Enhanced Payment Modal Component with improved scrolling
 const PaymentModal: React.FC<{
-  data: PaymentModalData
-  isOpen: boolean
-  onClose: () => void
+  data: PaymentModalData;
+  isOpen: boolean;
+  onClose: () => void;
   onProcessPayment: (paymentData: {
-    appointmentIds: string[]
-    paymentAmount: number
-    paymentMethod: string
-    paymentType: "full" | "partial"
-  }) => void
-  isProcessing: boolean
+    appointmentIds: string[];
+    paymentAmount: number;
+    paymentMethod: string;
+    paymentType: "full" | "partial";
+  }) => void;
+  isProcessing: boolean;
 }> = ({ data, isOpen, onClose, onProcessPayment, isProcessing }) => {
-  const [selectedAppointments, setSelectedAppointments] = useState<string[]>([])
-  const [paymentAmount, setPaymentAmount] = useState<number>(0)
-  const [paymentMethod, setPaymentMethod] = useState<string>("cash")
-  const [paymentType, setPaymentType] = useState<"full" | "partial">("full")
+  const [selectedAppointments, setSelectedAppointments] = useState<string[]>(
+    []
+  );
+  const [paymentAmount, setPaymentAmount] = useState<number>(0);
+  const [paymentMethod, setPaymentMethod] = useState<string>("cash");
+  const [paymentType, setPaymentType] = useState<"full" | "partial">("full");
 
   const pendingAppointments = data.patient.appointments.filter(
-    (apt) => apt.payment.status === "pending" || apt.payment.status === "partial",
-  )
+    (apt) =>
+      apt.payment.status === "pending" || apt.payment.status === "partial"
+  );
 
   const totalOwed = pendingAppointments.reduce((sum, apt) => {
-    const remaining = apt.payment.amount - (apt.payment.paidAmount || 0)
-    return sum + remaining
-  }, 0)
+    const remaining = apt.payment.amount - (apt.payment.paidAmount || 0);
+    return sum + remaining;
+  }, 0);
 
   useEffect(() => {
     if (data.paymentType === "full") {
-      setSelectedAppointments(pendingAppointments.map((apt) => apt._id))
-      setPaymentAmount(totalOwed)
-      setPaymentType("full")
-    } else if (data.paymentType === "single" && pendingAppointments.length > 0) {
-      setSelectedAppointments([pendingAppointments[0]._id])
-      const remaining = pendingAppointments[0].payment.amount - (pendingAppointments[0].payment.paidAmount || 0)
-      setPaymentAmount(remaining)
-      setPaymentType("full")
+      setSelectedAppointments(pendingAppointments.map((apt) => apt._id));
+      setPaymentAmount(totalOwed);
+      setPaymentType("full");
+    } else if (
+      data.paymentType === "single" &&
+      pendingAppointments.length > 0
+    ) {
+      setSelectedAppointments([pendingAppointments[0]._id]);
+      const remaining =
+        pendingAppointments[0].payment.amount -
+        (pendingAppointments[0].payment.paidAmount || 0);
+      setPaymentAmount(remaining);
+      setPaymentType("full");
     }
-  }, [data])
+  }, [data]);
 
   // ADD THIS NEW useEffect - This is the fix!
   useEffect(() => {
     // Only auto-update payment amount for full payments
     if (paymentType === "full") {
-      const newTotal = calculateSelectedTotal()
-      setPaymentAmount(newTotal)
+      const newTotal = calculateSelectedTotal();
+      setPaymentAmount(newTotal);
     }
-  }, [selectedAppointments, paymentType])
+  }, [selectedAppointments, paymentType]);
 
   const handleAppointmentToggle = (appointmentId: string) => {
     setSelectedAppointments((prev) => {
       if (prev.includes(appointmentId)) {
-        return prev.filter((id) => id !== appointmentId)
+        return prev.filter((id) => id !== appointmentId);
       } else {
-        return [...prev, appointmentId]
+        return [...prev, appointmentId];
       }
-    })
-  }
+    });
+  };
 
   const calculateSelectedTotal = () => {
     return selectedAppointments.reduce((sum, aptId) => {
-      const apt = pendingAppointments.find((a) => a._id === aptId)
+      const apt = pendingAppointments.find((a) => a._id === aptId);
       if (apt) {
-        const remaining = apt.payment.amount - (apt.payment.paidAmount || 0)
-        return sum + remaining
+        const remaining = apt.payment.amount - (apt.payment.paidAmount || 0);
+        return sum + remaining;
       }
-      return sum
-    }, 0)
-  }
+      return sum;
+    }, 0);
+  };
 
   const handleSubmit = () => {
     if (selectedAppointments.length === 0) {
-      alert("Please select appointments and enter a valid payment amount")
-      return
+      alert("Please select appointments and enter a valid payment amount");
+      return;
     }
 
     onProcessPayment({
@@ -1946,18 +2361,23 @@ const PaymentModal: React.FC<{
       paymentAmount,
       paymentMethod,
       paymentType,
-    })
-  }
+    });
+  };
 
-  if (!isOpen) return null
+  if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl mx-4 max-h-[90vh] flex flex-col">
         {/* Header - Fixed */}
         <div className="flex justify-between items-center p-6 border-b border-gray-200 flex-shrink-0">
-          <h3 className="text-xl font-semibold text-[#1E437A]">Process Payment</h3>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors">
+          <h3 className="text-xl font-semibold text-[#1E437A]">
+            Process Payment
+          </h3>
+          <button
+            onClick={onClose}
+            className="text-gray-400 hover:text-gray-600 transition-colors"
+          >
             <X className="w-6 h-6" />
           </button>
         </div>
@@ -1966,28 +2386,38 @@ const PaymentModal: React.FC<{
         <div className="flex-1 overflow-y-auto p-6 space-y-6">
           {/* Patient Info */}
           <div className="p-4 bg-gray-50 rounded-lg">
-            <h4 className="font-medium text-[#1E437A] mb-2">Patient Information</h4>
+            <h4 className="font-medium text-[#1E437A] mb-2">
+              Patient Information
+            </h4>
             <div className="grid grid-cols-2 gap-4 text-sm text-black">
               <div>
-                <span className="font-medium text-gray-800">Name:</span> {data.patient.firstName}{" "}
-                {data.patient.lastName}
+                <span className="font-medium text-gray-800">Name:</span>{" "}
+                {data.patient.firstName} {data.patient.lastName}
               </div>
               <div>
-                <span className="font-medium text-gray-800">Parent:</span> {data.patient.parentInfo?.name}
+                <span className="font-medium text-gray-800">Parent:</span>{" "}
+                {data.patient.parentInfo?.name}
               </div>
               <div>
-                <span className="font-medium text-gray-800">Total Amount Due:</span>{" "}
+                <span className="font-medium text-gray-800">
+                  Total Amount Due:
+                </span>{" "}
                 <span className="text-red-600 font-medium">₹{totalOwed}</span>
               </div>
               <div>
-                <span className="font-medium text-gray-800">Pending Appointments:</span> {pendingAppointments.length}
+                <span className="font-medium text-gray-800">
+                  Pending Appointments:
+                </span>{" "}
+                {pendingAppointments.length}
               </div>
             </div>
           </div>
 
           {/* Appointment Selection with Enhanced Scrolling */}
           <div>
-            <h4 className="font-medium text-[#1E437A] mb-3">Select Appointments to Pay</h4>
+            <h4 className="font-medium text-[#1E437A] mb-3">
+              Select Appointments to Pay
+            </h4>
             <div className="relative">
               {/* Custom scrollable container with visible scrollbar */}
               <div
@@ -2007,16 +2437,18 @@ const PaymentModal: React.FC<{
                     border-radius: 4px;
                   }
                   .appointments-scroll::-webkit-scrollbar-thumb {
-                    background: #C83C92;
+                    background: #c83c92;
                     border-radius: 4px;
                   }
                   .appointments-scroll::-webkit-scrollbar-thumb:hover {
-                    background: #B8358A;
+                    background: #b8358a;
                   }
                 `}</style>
                 <div className="appointments-scroll p-2 space-y-2">
                   {pendingAppointments.map((appointment) => {
-                    const remaining = appointment.payment.amount - (appointment.payment.paidAmount || 0)
+                    const remaining =
+                      appointment.payment.amount -
+                      (appointment.payment.paidAmount || 0);
                     return (
                       <label
                         key={appointment._id}
@@ -2025,47 +2457,62 @@ const PaymentModal: React.FC<{
                         <input
                           style={{ color: "black" }}
                           type="checkbox"
-                          checked={selectedAppointments.includes(appointment._id)}
-                          onChange={() => handleAppointmentToggle(appointment._id)}
+                          checked={selectedAppointments.includes(
+                            appointment._id
+                          )}
+                          onChange={() =>
+                            handleAppointmentToggle(appointment._id)
+                          }
                           className="mr-3 text-[#C83C92] focus:ring-[#C83C92] focus:ring-2 rounded"
                         />
                         <div className="flex-1">
                           <div className="flex justify-between items-center">
                             <div>
                               <div className="font-medium text-sm text-gray-900">
-                                {new Date(appointment.date).toLocaleDateString()} - {appointment.startTime}
+                                {new Date(
+                                  appointment.date
+                                ).toLocaleDateString()}{" "}
+                                - {appointment.startTime}
                                 {/* NEW: Show group session name if it's a group appointment */}
-                                {appointment.isGroupSession && appointment.groupSessionName && (
-                                  <span className="ml-2 inline-flex items-center gap-1 px-2 py-0.5 bg-purple-100 text-purple-800 rounded-full text-xs font-medium">
-                                    <Users className="w-3 h-3" />
-                                    {appointment.groupSessionName}
-                                  </span>
-                                )}
+                                {appointment.isGroupSession &&
+                                  appointment.groupSessionName && (
+                                    <span className="ml-2 inline-flex items-center gap-1 px-2 py-0.5 bg-purple-100 text-purple-800 rounded-full text-xs font-medium">
+                                      <Users className="w-3 h-3" />
+                                      {appointment.groupSessionName}
+                                    </span>
+                                  )}
                               </div>
                               <div className="text-xs text-gray-600 mt-1">
-                                {appointment.service.name} with {appointment.therapist.name}
+                                {appointment.service.name} with{" "}
+                                {appointment.therapist.name}
                               </div>
                               {appointment.payment.status === "partial" && (
                                 <div className="text-xs text-orange-600 mt-1 bg-orange-50 px-2 py-1 rounded">
-                                  Paid: ₹{appointment.payment.paidAmount} of ₹{appointment.payment.amount}
+                                  Paid: ₹{appointment.payment.paidAmount} of ₹
+                                  {appointment.payment.amount}
                                 </div>
                               )}
                             </div>
                             <div className="text-right ml-4">
-                              <div className="font-semibold text-sm text-gray-900">₹{remaining}</div>
-                              <div className="text-xs text-gray-500">remaining</div>
+                              <div className="font-semibold text-sm text-gray-900">
+                                ₹{remaining}
+                              </div>
+                              <div className="text-xs text-gray-500">
+                                remaining
+                              </div>
                             </div>
                           </div>
                         </div>
                       </label>
-                    )
+                    );
                   })}
                 </div>
               </div>
               {/* Scroll indicator */}
               {pendingAppointments.length > 3 && (
                 <div className="text-xs text-gray-500 mt-2 text-center">
-                  Scroll to view more appointments ({pendingAppointments.length} total)
+                  Scroll to view more appointments ({pendingAppointments.length}{" "}
+                  total)
                 </div>
               )}
             </div>
@@ -2074,7 +2521,9 @@ const PaymentModal: React.FC<{
           {/* Payment Details */}
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-[#1E437A] mb-2">Payment Type</label>
+              <label className="block text-sm font-medium text-[#1E437A] mb-2">
+                Payment Type
+              </label>
               <div className="flex gap-4">
                 <label className="flex items-center">
                   <input
@@ -2084,9 +2533,9 @@ const PaymentModal: React.FC<{
                     value="full"
                     checked={paymentType === "full"}
                     onChange={(e) => {
-                      setPaymentType(e.target.value as "full" | "partial")
+                      setPaymentType(e.target.value as "full" | "partial");
                       if (e.target.value === "full") {
-                        setPaymentAmount(calculateSelectedTotal())
+                        setPaymentAmount(calculateSelectedTotal());
                       }
                     }}
                     className="mr-2 text-[#C83C92] focus:ring-[#C83C92]"
@@ -2097,7 +2546,9 @@ const PaymentModal: React.FC<{
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-[#1E437A] mb-2">Payment Amount</label>
+                <label className="block text-sm font-medium text-[#1E437A] mb-2">
+                  Payment Amount
+                </label>
                 <input
                   style={{ color: "black" }}
                   type="number"
@@ -2108,10 +2559,14 @@ const PaymentModal: React.FC<{
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C83C92] text-black"
                   placeholder="Enter amount"
                 />
-                <div className="text-xs text-gray-500 mt-1">Selected total: ₹{calculateSelectedTotal()}</div>
+                <div className="text-xs text-gray-500 mt-1">
+                  Selected total: ₹{calculateSelectedTotal()}
+                </div>
               </div>
               <div>
-                <label className="block text-sm font-medium text-[#1E437A] mb-2">Payment Method</label>
+                <label className="block text-sm font-medium text-[#1E437A] mb-2">
+                  Payment Method
+                </label>
                 <select
                   style={{ color: "black" }}
                   value={paymentMethod}
@@ -2155,46 +2610,46 @@ const PaymentModal: React.FC<{
         </div>
       </div>
     </div>
-  )
-}
+  );
+};
 
 // Appointments Detail Modal Component (keeping existing implementation)
 const AppointmentsDetailModal: React.FC<{
-  patient: PatientWithAppointments
-  isOpen: boolean
-  onClose: () => void
+  patient: PatientWithAppointments;
+  isOpen: boolean;
+  onClose: () => void;
 }> = ({ patient, isOpen, onClose }) => {
-  if (!isOpen) return null
+  if (!isOpen) return null;
 
   const getStatusColor = (status: string) => {
     switch (status) {
       case "completed":
-        return "bg-green-100 text-green-800"
+        return "bg-green-100 text-green-800";
       case "scheduled":
-        return "bg-blue-100 text-blue-800"
+        return "bg-blue-100 text-blue-800";
       case "cancelled":
-        return "bg-red-100 text-red-800"
+        return "bg-red-100 text-red-800";
       case "no-show":
-        return "bg-orange-100 text-orange-800"
+        return "bg-orange-100 text-orange-800";
       default:
-        return "bg-gray-100 text-gray-800"
+        return "bg-gray-100 text-gray-800";
     }
-  }
+  };
 
   const getPaymentStatusColor = (status: string) => {
     switch (status) {
       case "paid":
-        return "bg-green-100 text-green-800"
+        return "bg-green-100 text-green-800";
       case "pending":
-        return "bg-yellow-100 text-yellow-800"
+        return "bg-yellow-100 text-yellow-800";
       case "partial":
-        return "bg-orange-100 text-orange-800"
+        return "bg-orange-100 text-orange-800";
       case "refunded":
-        return "bg-red-100 text-red-800"
+        return "bg-red-100 text-red-800";
       default:
-        return "bg-gray-100 text-gray-800"
+        return "bg-gray-100 text-gray-800";
     }
-  }
+  };
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
@@ -2204,7 +2659,10 @@ const AppointmentsDetailModal: React.FC<{
           <h3 className="text-xl font-semibold text-[#1E437A]">
             Appointment History - {patient.firstName} {patient.lastName}
           </h3>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors">
+          <button
+            onClick={onClose}
+            className="text-gray-400 hover:text-gray-600 transition-colors"
+          >
             <X className="w-6 h-6" />
           </button>
         </div>
@@ -2213,17 +2671,23 @@ const AppointmentsDetailModal: React.FC<{
         <div className="mb-6 p-4 bg-gray-50 rounded-lg">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm text-black">
             <div>
-              <span className="font-medium text-gray-800">Total Appointments:</span> {patient.totalAppointments}
+              <span className="font-medium text-gray-800">
+                Total Appointments:
+              </span>{" "}
+              {patient.totalAppointments}
             </div>
             <div>
-              <span className="font-medium text-gray-800">Completed:</span> {patient.completedAppointments}
+              <span className="font-medium text-gray-800">Completed:</span>{" "}
+              {patient.completedAppointments}
             </div>
             <div>
               <span className="font-medium text-gray-800">Total Paid:</span>{" "}
               <span className="text-green-600">₹{patient.totalPaid}</span>
             </div>
             <div>
-              <span className="font-medium text-gray-800">Payment to be received:</span>{" "}
+              <span className="font-medium text-gray-800">
+                Payment to be received:
+              </span>{" "}
               <span className="text-red-600">₹{patient.totalOwed}</span>
             </div>
           </div>
@@ -2233,28 +2697,37 @@ const AppointmentsDetailModal: React.FC<{
         <div className="space-y-4">
           <h4 className="font-medium text-[#1E437A]">All Appointments</h4>
           {patient.appointments.map((appointment) => (
-            <div key={appointment._id} className="border rounded-lg p-4 hover:bg-gray-50">
+            <div
+              key={appointment._id}
+              className="border rounded-lg p-4 hover:bg-gray-50"
+            >
               <div className="flex justify-between items-start mb-3">
                 <div>
                   <div className="font-medium text-[#456696] flex items-center gap-2">
-                    {new Date(appointment.date).toLocaleDateString()} - {appointment.startTime} to {appointment.endTime}
+                    {new Date(appointment.date).toLocaleDateString()} -{" "}
+                    {appointment.startTime} to {appointment.endTime}
                     {/* NEW: Show group session indicator and name */}
                     {appointment.isGroupSession && (
                       <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-purple-100 text-purple-800 rounded-full text-xs font-medium">
                         <Users className="w-3 h-3" />
                         Group Session
-                        {appointment.groupSessionName && `: ${appointment.groupSessionName}`}
+                        {appointment.groupSessionName &&
+                          `: ${appointment.groupSessionName}`}
                       </span>
                     )}
                   </div>
                   <div className="text-sm text-gray-600 mt-1">
                     {appointment.service.name} with {appointment.therapist.name}
                   </div>
-                  <div className="text-sm text-gray-600">Type: {appointment.type}</div>
+                  <div className="text-sm text-gray-600">
+                    Type: {appointment.type}
+                  </div>
                 </div>
                 <div className="text-right">
                   <span
-                    className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(appointment.status)}`}
+                    className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(
+                      appointment.status
+                    )}`}
                   >
                     {appointment.status}
                   </span>
@@ -2262,27 +2735,34 @@ const AppointmentsDetailModal: React.FC<{
               </div>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm text-black">
                 <div>
-                  <span className="font-medium text-gray-800">Amount:</span> ₹{appointment.payment.amount}
+                  <span className="font-medium text-gray-800">Amount:</span> ₹
+                  {appointment.payment.amount}
                 </div>
                 <div>
-                  <span className="font-medium text-gray-800">Payment Status:</span>{" "}
+                  <span className="font-medium text-gray-800">
+                    Payment Status:
+                  </span>{" "}
                   <span
-                    className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${getPaymentStatusColor(appointment.payment.status)}`}
+                    className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${getPaymentStatusColor(
+                      appointment.payment.status
+                    )}`}
                   >
                     {appointment.payment.status}
                   </span>
                 </div>
                 <div>
-                  <span className="font-medium text-gray-800">Method:</span> {appointment.payment.method}
+                  <span className="font-medium text-gray-800">Method:</span>{" "}
+                  {appointment.payment.method}
                 </div>
                 <div>
-                  <span className="font-medium text-gray-800">Sessions:</span> {appointment.sessionsCompleted}/
-                  {appointment.totalSessions}
+                  <span className="font-medium text-gray-800">Sessions:</span>{" "}
+                  {appointment.sessionsCompleted}/{appointment.totalSessions}
                 </div>
               </div>
               {appointment.payment.status === "partial" && (
                 <div className="mt-2 text-sm text-orange-600">
-                  Paid: ₹{appointment.payment.paidAmount} of ₹{appointment.payment.amount}
+                  Paid: ₹{appointment.payment.paidAmount} of ₹
+                  {appointment.payment.amount}
                 </div>
               )}
             </div>
@@ -2290,7 +2770,9 @@ const AppointmentsDetailModal: React.FC<{
         </div>
 
         {patient.appointments.length === 0 && (
-          <div className="text-center py-8 text-gray-500">No appointments found for this patient.</div>
+          <div className="text-center py-8 text-gray-500">
+            No appointments found for this patient.
+          </div>
         )}
 
         {/* Close Button */}
@@ -2304,7 +2786,7 @@ const AppointmentsDetailModal: React.FC<{
         </div>
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default PatientsEnhancedPage
+export default PatientsEnhancedPage;
