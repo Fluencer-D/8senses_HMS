@@ -1524,11 +1524,53 @@ const PatientsEnhancedPage: React.FC = () => {
     useState<PaymentModalData | null>(null);
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
 
-  // Fetch patients with appointments data - FIXED API ENDPOINT
-  const fetchPatientsWithAppointments = async () => {
+  // Fetch patients with appointments data - OPTIMIZED WITH CACHING
+  const fetchPatientsWithAppointments = async (
+    forceRefresh: boolean = false
+  ) => {
     try {
+      // Performance monitoring
+      console.time("fetchPatientsWithAppointments");
+
       setLoading(true);
       setError(null);
+
+      // Cache configuration
+      const CACHE_KEY = "patients_with_appointments_cache";
+      const CACHE_TIMESTAMP_KEY = "patients_cache_timestamp";
+      const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes in milliseconds
+
+      // Check cache first (if not forcing refresh)
+      if (!forceRefresh) {
+        const cachedData = localStorage.getItem(CACHE_KEY);
+        const cacheTimestamp = localStorage.getItem(CACHE_TIMESTAMP_KEY);
+
+        if (cachedData && cacheTimestamp) {
+          const cacheAge = Date.now() - parseInt(cacheTimestamp);
+
+          // Use cached data if less than 5 minutes old
+          if (cacheAge < CACHE_DURATION) {
+            console.log(
+              `✅ Using cached data (age: ${Math.round(cacheAge / 1000)}s)`
+            );
+            const parsedData = JSON.parse(cachedData);
+            setPatients(parsedData);
+            calculatePaymentSummary(parsedData);
+            setLoading(false);
+            console.timeEnd("fetchPatientsWithAppointments");
+            return;
+          } else {
+            console.log(
+              `⚠️ Cache expired (age: ${Math.round(cacheAge / 1000)}s)`
+            );
+          }
+        }
+      } else {
+        console.log("🔄 Force refresh - bypassing cache");
+      }
+
+      // Fetch from API
+      const apiStartTime = Date.now();
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}/api/appointments/with-appointments`,
         {
@@ -1550,14 +1592,38 @@ const PatientsEnhancedPage: React.FC = () => {
         throw new Error("API returned unsuccessful response");
       }
 
+      const apiTime = Date.now() - apiStartTime;
+      console.log(`📊 API Response Time: ${apiTime}ms`);
+
+      // Log backend performance metrics if available
+      if (apiResponse.performance) {
+        console.log("🚀 Backend Performance:", apiResponse.performance);
+      }
+
+      // Update state
       setPatients(apiResponse.data);
       calculatePaymentSummary(apiResponse.data);
+
+      // Store in cache
+      localStorage.setItem(CACHE_KEY, JSON.stringify(apiResponse.data));
+      localStorage.setItem(CACHE_TIMESTAMP_KEY, Date.now().toString());
+      console.log("💾 Data cached successfully");
+
+      console.timeEnd("fetchPatientsWithAppointments");
     } catch (err) {
       console.error("Error fetching patients:", err);
       setError(err instanceof Error ? err.message : "Failed to fetch patients");
+      console.timeEnd("fetchPatientsWithAppointments");
     } finally {
       setLoading(false);
     }
+  };
+
+  // Clear cache helper function
+  const clearCache = () => {
+    localStorage.removeItem("patients_with_appointments_cache");
+    localStorage.removeItem("patients_cache_timestamp");
+    console.log("🗑️ Cache cleared");
   };
 
   // Calculate payment summary
@@ -1656,6 +1722,8 @@ const PatientsEnhancedPage: React.FC = () => {
           (patient) => patient._id !== selectedPatient._id
         );
         calculatePaymentSummary(updatedPatients);
+        // Clear cache after deletion
+        clearCache();
         // Show success message
         alert(
           `Patient ${getPatientName(
@@ -1687,8 +1755,9 @@ const PatientsEnhancedPage: React.FC = () => {
           : patient
       )
     );
-    // Refresh the data to get the latest information
-    fetchPatientsWithAppointments();
+    // Clear cache and force refresh to get the latest information
+    clearCache();
+    fetchPatientsWithAppointments(true);
   };
 
   // Open payment modal
@@ -1745,8 +1814,9 @@ const PatientsEnhancedPage: React.FC = () => {
       }
 
       const result = await response.json();
-      // Refresh data
-      await fetchPatientsWithAppointments();
+      // Clear cache and force refresh data
+      clearCache();
+      await fetchPatientsWithAppointments(true);
       // Show success message
       alert(`Payment of ₹${paymentData.paymentAmount} processed successfully!`);
       setShowPaymentModal(false);
@@ -1982,8 +2052,12 @@ const PatientsEnhancedPage: React.FC = () => {
             Export Report
           </button>
           <button
-            onClick={fetchPatientsWithAppointments}
+            onClick={() => {
+              clearCache();
+              fetchPatientsWithAppointments(true);
+            }}
             className="flex items-center gap-2 bg-gray-100 text-gray-700 px-4 py-2 rounded-lg font-medium text-gray-800 hover:bg-gray-200 transition-colors"
+            title="Force refresh data (clears cache)"
           >
             <RefreshCw className="w-4 h-4" />
             Refresh
